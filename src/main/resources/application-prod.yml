@@ -1,0 +1,14 @@
+# Üretim: tüm bağlantı bilgileri ortam değişkeninden; varsayılan değer yok (eksikse uygulama başlamaz).
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_KULLANICI}
+    password: ${DB_SIFRE}
+    hikari:
+      maximum-pool-size: ${DB_HAVUZ_BOYUTU:10}
+
+springdoc:
+  swagger-ui:
+    enabled: ${SWAGGER_ACIK:false}
+  api-docs:
+    enabled: ${SWAGGER_ACIK:false}

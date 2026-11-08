@@ -1,0 +1,10 @@
+# Test profili: veritabanı bağlantısı OracleTestOrtami (Testcontainers) tarafından dinamik olarak verilir.
+spring:
+  datasource:
+    hikari:
+      maximum-pool-size: 5
+
+logging:
+  level:
+    tr.depo: DEBUG
+    org.testcontainers: INFO

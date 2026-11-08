@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  # depo-domain GitHub Packages'tan (acartunahan/kaju-migration) okunur.
+  packages: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build ve testler (birim + Oracle entegrasyon)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Kaynak kodu al
+        uses: actions/checkout@v4
+
+      # GITHUB_TOKEN'ın başka reponun paketini okuyabilmesi için paketin ayarlarında bu repoya erişim verilmeli:
+      # GitHub > kaju-migration > Packages > depo-domain (ve depo-modernizasyon) > Manage Actions access > kaju-backend.
+      - name: JDK 25 (Temurin) ve GitHub Packages kimliği
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+          server-id: github
+          server-username: GITHUB_ACTOR
+          server-password: GITHUB_TOKEN
+
+      # Entegrasyon testleri Testcontainers ile gerçek Oracle Free 23 başlatır (runner'da Docker hazır).
+      - name: mvn verify
+        run: mvn -B -ntp clean verify
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Test raporları
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-raporlari
+          path: |
+            target/surefire-reports/
+            target/failsafe-reports/
+          retention-days: 7

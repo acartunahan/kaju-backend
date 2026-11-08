@@ -1,0 +1,108 @@
+# kaju-backend
+
+Depo / envanter uygulamasının CRUD backend'i. Domain modeli (JPA entity'leri ve Flyway şeması) bu repoda
+değil, **`tr.depo:depo-domain`** bağımlılığındadır; tek kaynağı
+[kaju-migration](https://github.com/acartunahan/kaju-migration) reposudur. Domain kararları için oradaki
+`HANDOFF.md`'ye bakın.
+
+| | |
+|---|---|
+| Dil / platform | Java 25, Spring Boot 4.0.9 (Spring Framework 7, Hibernate 7.2) |
+| Veritabanı | Oracle (şema domain'deki Flyway script'leriyle; `ddl-auto=validate`) |
+| API | REST, `/api/v1`, RFC 9457 ProblemDetail, OpenAPI (`/swagger-ui.html`) |
+| Mapping | MapStruct 1.6.3 |
+| Test | JUnit 5, Mockito, AssertJ, ArchUnit, Testcontainers (Oracle Free 23) |
+
+## Domain bağımlılığı
+
+`depo-domain` kaju-migration reposundan yayımlanır:
+
+- **Yerelde (en hızlısı):** kaju-migration klasöründe
+  ```bash
+  cd depo-modernizasyon
+  mvn -B -pl depo-domain -am install
+  ```
+  Jar `~/.m2`'ye kurulur; bu proje önce oradan okur.
+- **GitHub Packages:** kaju-migration'da `domain-v<sürüm>` etiketi push edilince yayımlanır. Bu projeyi
+  başka bir makinede derlemek için `~/.m2/settings.xml`'e `read:packages` yetkili bir token ekleyin:
+  ```xml
+  <settings>
+    <servers>
+      <server>
+        <id>github</id>
+        <username>GITHUB_KULLANICI_ADI</username>
+        <password>${env.GITHUB_TOKEN}</password>
+      </server>
+    </servers>
+  </settings>
+  ```
+  CI bunu `GITHUB_TOKEN` ile yapar; paket ayarlarında bu repoya Actions erişimi verilmiş olmalı.
+
+Domain değişikliği bu repoda yapılmaz: kaju-migration'da yeni bir Flyway sürümüyle yapılır, yayımlanır ve
+buradaki `depo-domain.version` yükseltilir.
+
+## Çalıştırma
+
+Profiller: `local` (varsayılan), `test`, `prod`. Bağlantı bilgileri ortam değişkenlerinden okunur:
+
+| Değişken | local varsayılanı | prod |
+|---|---|---|
+| `DB_URL` | `jdbc:oracle:thin:@//localhost:1521/FREEPDB1` | zorunlu |
+| `DB_KULLANICI` | `HEDEF` | zorunlu |
+| `DB_SIFRE` | — (zorunlu) | zorunlu |
+| `SWAGGER_ACIK` | — | `false` |
+
+Yerel veritabanı kaju-migration'daki Docker Compose'tur (`depo-modernizasyon/yerel-db`). Şemayı kuran
+kullanıcının `CREATE TRIGGER` yetkisi olmalıdır (domain'deki fiziksel silme yasağı trigger'ları).
+
+```bash
+DB_SIFRE=... mvn spring-boot:run
+```
+
+- API: `http://localhost:8080/api/v1/...`
+- Swagger UI: `http://localhost:8080/swagger-ui.html`
+- Sağlık: `http://localhost:8080/actuator/health`
+
+## Testler
+
+```bash
+mvn -B test      # birim + web katmanı + mimari kurallar (Docker gerekmez)
+mvn -B verify    # + *EntegrasyonTesti: Testcontainers ile gerçek Oracle (Docker gerekir)
+```
+
+## API sözleşmesi
+
+- **Kaynaklar:** `GET /{kaynak}/{id}`, `GET /{kaynak}` (sayfalı), `POST` (201 + `Location`), `PUT /{id}`
+  (tam güncelleme, `versiyon` zorunlu), `DELETE /{id}` (204).
+- **Silme her zaman soft delete'tir.** Silinmiş kayıt GET/PUT/DELETE'te 404 döner, listelerde görünmez;
+  silinmiş kayda referans verilemez (422). Başka aktif kayıtların kullandığı bir kayıt silinemez (409).
+- **Sayfalama:** `?page=0&size=20&sort=ad,asc`; boyut üst sınırı 100; sıralama yalnızca kaynağın izin verdiği
+  alanlarla (aksi halde 400). Cevap: `{icerik, sayfa, boyut, toplamEleman, toplamSayfa}`.
+- **Hatalar (RFC 9457):** `type`, `title`, `status`, `detail`, `instance` ve ek olarak `kod`; doğrulama
+  hatalarında `hatalar: [{alan, mesaj}]`, referans hatalarında `alan`. Mesajlar Türkçe (`messages.properties`).
+
+| Durum | Kod |
+|---|---|
+| 400 | `DOGRULAMA_HATASI`, `GECERSIZ_ISTEK`, `GECERSIZ_SIRALAMA` |
+| 404 | `KAYIT_BULUNAMADI` (yok ya da silinmiş), `KAYNAK_BULUNAMADI` |
+| 409 | `SURUM_CAKISMASI`, `TEKILLIK_IHLALI`, `KAYIT_KULLANIMDA` |
+| 422 | `REFERANS_GECERSIZ`, `IS_KURALI_IHLALI`, `VERI_KURALI_IHLALI` |
+| 500 | `BEKLENMEYEN_HATA` (ayrıntı sadece logda) |
+
+## Yapı
+
+Package-by-feature: her kaynak kendi paketinde (`controller`, `XService` + `XServiceImpl`, `XRepository`,
+`XMapper`, `dto/`). Ortak altyapı `common/`:
+
+| Paket | İçerik |
+|---|---|
+| `common.config` | JPA (entity taraması, UTC audit zamanı), geçici `AuditorAware`, OpenAPI |
+| `common.exception` | `KajuException` hiyerarşisi, `HataKodu`, `GlobalExceptionHandler`, `OracleHataCevirici` |
+| `common.paging` | `SayfaCevabi`, `SiralamaDogrulayici` |
+| `common.persistence` | `AktifKayitRepository` (delete* yok), `ReferansYukleyici` |
+| `common.service` | `SoftDeleteServisSablonu` (silme akışı), `SilmeAltyapisi`, `KullanimReferansi` |
+| `common.web` | `ApiYollari`, `KaynakKonumu` |
+
+Mimari kurallar `MimariKurallarTest` (ArchUnit) ile build'de zorlanır: repository'ler `delete*` açan
+arayüzlerden türeyemez, `EntityManager.remove` ve `DELETE` sorgusu yasak, controller entity ve
+`ServiceImpl`/repository'ye bağlanamaz, alan enjeksiyonu yok.
