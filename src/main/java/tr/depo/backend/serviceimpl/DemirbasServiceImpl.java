@@ -17,6 +17,7 @@ import tr.depo.backend.repository.EnvanterRepository;
 import tr.depo.backend.service.DemirbasService;
 import tr.depo.backend.service.EnvanterService;
 import tr.depo.backend.service.SilmeService;
+import tr.depo.backend.service.ZimmetGecmisiService;
 import tr.depo.backend.util.SiralamaDogrulayici;
 import tr.depo.domain.envanter.Envanter;
 import tr.depo.domain.ortak.Sicil;
@@ -34,13 +35,15 @@ public class DemirbasServiceImpl extends AbstractSoftDeleteServiceImpl<Envanter>
     private final EnvanterRepository repository;
     private final DemirbasMapper mapper;
     private final EnvanterService envanterService;
+    private final ZimmetGecmisiService zimmetGecmisiService;
 
     public DemirbasServiceImpl(EnvanterRepository repository, DemirbasMapper mapper, EnvanterService envanterService,
-                                SilmeService silmeService) {
+                               ZimmetGecmisiService zimmetGecmisiService, SilmeService silmeService) {
         super(repository, silmeService, KAYNAK);
         this.repository = repository;
         this.mapper = mapper;
         this.envanterService = envanterService;
+        this.zimmetGecmisiService = zimmetGecmisiService;
     }
 
     @Override
@@ -73,6 +76,7 @@ public class DemirbasServiceImpl extends AbstractSoftDeleteServiceImpl<Envanter>
         Envanter demirbas = mapper.yeni(istek);
         envanterService.bagla(demirbas, istek.kategoriId(), istek.markaId(), istek.modelId(), istek.depoId(), istek.ihaleId());
         Envanter kaydedilen = repository.save(demirbas);
+        zimmetGecmisiService.degisiklikVarsaKaydet(kaydedilen, null);
         repository.flush();
         return mapper.cevap(kaydedilen);
     }
@@ -84,8 +88,10 @@ public class DemirbasServiceImpl extends AbstractSoftDeleteServiceImpl<Envanter>
         surumuDogrula(demirbas, istek.versiyon());
         envanterService.garantiSirasiniDogrula(istek.garantiBaslangic(), istek.garantiBitis());
         tekilOlmali(demirbas, istek.demirbasNo(), istek.seriNo());
+        Sicil oncekiZimmetliSicil = demirbas.getZimmetliSicil();
         mapper.guncelle(istek, demirbas);
         envanterService.bagla(demirbas, istek.kategoriId(), istek.markaId(), istek.modelId(), istek.depoId(), istek.ihaleId());
+        zimmetGecmisiService.degisiklikVarsaKaydet(demirbas, oncekiZimmetliSicil);
         repository.flush();
         return mapper.cevap(demirbas);
     }

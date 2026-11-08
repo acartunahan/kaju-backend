@@ -111,6 +111,7 @@ aggregate'in alt kayıtları aynı transaction'da soft delete edilir.
 | Sayım satırı | `/sayimlar/{sayimId}/satirlar` | CRUD (tur: YEREL/GENEL, sayımın kapsamıyla aynı) | — |
 | Envanter hareketi | `/envanter-hareketleri` | Yalnızca GET, POST (geçmiş kaydı) | Yok (405) |
 | Zimmet kaydı | `/zimmet-kayitlari` | Yalnızca GET, POST (geçmiş kaydı) | Yok (405) |
+| Zimmet geçmişi | `/demirbaslar/{demirbasId}/zimmet-gecmisi` | Yalnızca GET (en yeni önce). Zimmetli sicil değişince demirbaş servisi otomatik yazar; migration başlangıç kaydını yazar | Yok (405) |
 
 Bilerek açılmayanlar: `COKLU_ZIMMET` ve `SQL_KAYDI` (anlamları doğrulanmadı), envanter fotoğrafı (dosya deposu
 bağlantısı sonra).

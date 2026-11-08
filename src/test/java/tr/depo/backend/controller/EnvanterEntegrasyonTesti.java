@@ -154,6 +154,35 @@ class EnvanterEntegrasyonTesti extends OracleEntegrasyonTestTabani {
     }
 
     @Test
+    void shouldRecordEverySicilChangeOfADemirbasAndListNewestFirst() {
+        long id = demirbaslar.olustur(EnvanterFixture.demirbas().ile("zimmetliSicil", "8800001"));
+        assertThat(demirbaslar.put(id, EnvanterFixture.demirbas().ile("zimmetliSicil", "8800002").guncelleme(0)))
+            .hasStatusOk();
+        assertThat(demirbaslar.put(id, EnvanterFixture.demirbas().ile("zimmetliSicil", "8800002").guncelleme(1)))
+            .as("sicil değişmedi: geçmişe yazılmaz").hasStatusOk();
+        assertThat(demirbaslar.put(id, EnvanterFixture.demirbas().olmadan("zimmetliSicil").guncelleme(2)))
+            .as("zimmet kaldırıldı").hasStatusOk();
+
+        MvcTestResult gecmis = mvc.get().uri("/api/v1/demirbaslar/{id}/zimmet-gecmisi", id).exchange();
+        assertThat(gecmis).hasStatusOk().bodyJson()
+            .hasPathSatisfying("$.toplamEleman", t -> assertThat(t).asNumber().isEqualTo(3))
+            .hasPathSatisfying("$.icerik[0].oncekiSicil", s -> assertThat(s).asString().isEqualTo("8800002"))
+            .hasPathSatisfying("$.icerik[0].yeniSicil", s -> assertThat(s).isNull())
+            .hasPathSatisfying("$.icerik[1].oncekiSicil", s -> assertThat(s).asString().isEqualTo("8800001"))
+            .hasPathSatisfying("$.icerik[1].yeniSicil", s -> assertThat(s).asString().isEqualTo("8800002"))
+            .hasPathSatisfying("$.icerik[2].oncekiSicil", s -> assertThat(s).isNull())
+            .hasPathSatisfying("$.icerik[2].yeniSicil", s -> assertThat(s).asString().isEqualTo("8800001"))
+            .hasPathSatisfying("$.icerik[2].kaynak", k -> assertThat(k).asString().isEqualTo("DEGISIKLIK"))
+            .hasPathSatisfying("$.icerik[2].demirbasId", d -> assertThat(d).asNumber().isEqualTo((int) id))
+            .hasPathSatisfying("$.icerik[2].olusturan", o -> assertThat(o).asString().isEqualTo("API"));
+
+        long sarf = sarflar.olustur(EnvanterFixture.sarf("Toner"));
+        assertThat(mvc.get().uri("/api/v1/demirbaslar/{id}/zimmet-gecmisi", sarf)).hasStatus(404);
+        assertThat(demirbaslar.delete(id)).hasStatus(204);
+        assertThat(mvc.get().uri("/api/v1/demirbaslar/{id}/zimmet-gecmisi", id)).hasStatus(404);
+    }
+
+    @Test
     void shouldCreateUpdateAndDeleteSarfMalzemesi() {
         long markaId = veri.marka(MalzemeTuru.SARF, "HP Sarf");
         long id = sarflar.olustur(EnvanterFixture.sarf("Toner 85A").ile("markaId", markaId));

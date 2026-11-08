@@ -34,12 +34,14 @@ import tr.depo.backend.repository.EnvanterRepository;
 import tr.depo.backend.service.EnvanterService;
 import tr.depo.backend.service.ReferansService;
 import tr.depo.backend.service.SilmeService;
+import tr.depo.backend.service.ZimmetGecmisiService;
 import tr.depo.domain.envanter.Barkod;
 import tr.depo.domain.envanter.DemirbasDurumu;
 import tr.depo.domain.envanter.Envanter;
 import tr.depo.domain.envanter.EnvanterAparati;
 import tr.depo.domain.envanter.EnvanterFotografi;
 import tr.depo.domain.envanter.EnvanterNotu;
+import tr.depo.domain.ortak.Sicil;
 import tr.depo.domain.tanim.MalzemeTuru;
 
 /** Envanter servislerinin kaynağa özgü kuralları: tür ayrımı, garanti, aggregate silme, alt kaydın sahibi. */
@@ -55,6 +57,8 @@ class EnvanterServiceImplTest {
     private ReferansService referansService;
     @Mock
     private SilmeService silmeService;
+    @Mock
+    private ZimmetGecmisiService zimmetGecmisiService;
 
     private DemirbasServiceImpl demirbasServisi;
     private SarfMalzemesiServiceImpl sarfServisi;
@@ -64,7 +68,7 @@ class EnvanterServiceImplTest {
         EnvanterService envanterService = new EnvanterServiceImpl(referansService, silmeService);
         demirbasServisi = new DemirbasServiceImpl(envanterRepository,
             new DemirbasMapperImpl(new IliskiOzetiMapper(), new DegerNesnesiMapper()), envanterService,
-            silmeService);
+            zimmetGecmisiService, silmeService);
         sarfServisi = new SarfMalzemesiServiceImpl(envanterRepository, new SarfMalzemesiMapperImpl(new IliskiOzetiMapper()),
             envanterService, silmeService);
     }
@@ -122,6 +126,22 @@ class EnvanterServiceImplTest {
 
         verify(envanterRepository, never()).existsByTurAndDemirbasNo(any(), any());
         verify(envanterRepository, never()).existsByTurAndSeriNo(any(), any());
+    }
+
+    @Test
+    void shouldPassThePreviousSicilToZimmetHistoryOnCreateAndUpdate() {
+        when(envanterRepository.save(any(Envanter.class))).thenAnswer(cagri -> cagri.getArgument(0));
+        demirbasServisi.olustur(demirbasIstegi(null, null));
+        verify(zimmetGecmisiService).degisiklikVarsaKaydet(any(Envanter.class), eq(null));
+
+        Envanter demirbas = Envanter.demirbas(DemirbasDurumu.NORMAL, TARIH);
+        demirbas.setZimmetliSicil(new Sicil("0012"));
+        when(envanterRepository.findById(ID)).thenReturn(Optional.of(demirbas));
+        demirbasServisi.guncelle(ID, new UpdateDemirbasRequest(0, DemirbasDurumu.NORMAL, TARIH, null, null, "Laptop",
+            null, null, null, null, "0034", null, null, null, null, null, null, null, null, null));
+
+        verify(zimmetGecmisiService).degisiklikVarsaKaydet(demirbas, new Sicil("0012"));
+        assertThat(demirbas.getZimmetliSicil()).isEqualTo(new Sicil("0034"));
     }
 
     private static CreateDemirbasRequest numarali(Long demirbasNo, String seriNo) {

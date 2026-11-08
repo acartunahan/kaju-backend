@@ -25,12 +25,13 @@ import tr.depo.backend.service.DemirbasService;
 import tr.depo.backend.service.EnvanterAparatiService;
 import tr.depo.backend.service.EnvanterNotuService;
 import tr.depo.backend.service.SarfMalzemesiService;
+import tr.depo.backend.service.ZimmetGecmisiService;
 import tr.depo.backend.util.EnvanterFixture;
 import tr.depo.backend.util.IstekGovdesi;
 
 /** Envanter controller'larının web sözleşmesi: yollar (iç içe alt kaynaklar dahil), 201 + Location, doğrulama, 204. */
 @WebMvcTest({DemirbasController.class, SarfMalzemesiController.class, BarkodController.class,
-    EnvanterNotuController.class, EnvanterAparatiController.class})
+    EnvanterNotuController.class, EnvanterAparatiController.class, ZimmetGecmisiController.class})
 @Import(OracleHataCevirici.class)
 class EnvanterControllerTest {
 
@@ -47,6 +48,8 @@ class EnvanterControllerTest {
     private EnvanterNotuService notService;
     @MockitoBean
     private EnvanterAparatiService aparatService;
+    @MockitoBean
+    private ZimmetGecmisiService zimmetGecmisiService;
 
     private MvcTestResult post(String yol, IstekGovdesi govde) {
         return mvc.post().uri(yol).contentType(MediaType.APPLICATION_JSON).content(govde.json()).exchange();
@@ -100,6 +103,14 @@ class EnvanterControllerTest {
         assertThat(mvc.get().uri("/api/v1/demirbaslar")).hasStatusOk();
         verify(demirbasService).listele(any(Pageable.class));
         verifyNoMoreInteractions(demirbasService);
+    }
+
+    @Test
+    void shouldServeZimmetHistoryOnlyForReading() {
+        assertThat(mvc.get().uri("/api/v1/demirbaslar/7/zimmet-gecmisi")).hasStatusOk();
+        verify(zimmetGecmisiService).listele(eq(7L), any(Pageable.class));
+        assertThat(mvc.post().uri("/api/v1/demirbaslar/7/zimmet-gecmisi").contentType(MediaType.APPLICATION_JSON)
+            .content("{}")).hasStatus(405);
     }
 
     @Test
