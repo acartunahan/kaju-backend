@@ -8,6 +8,8 @@ import tr.depo.backend.dto.CreateDemirbasRequest;
 import tr.depo.backend.dto.DemirbasResponse;
 import tr.depo.backend.dto.SayfaResponse;
 import tr.depo.backend.dto.UpdateDemirbasRequest;
+import tr.depo.backend.exception.GecersizIstekException;
+import tr.depo.backend.exception.HataKodu;
 import tr.depo.backend.exception.KayitBulunamadiException;
 import tr.depo.backend.exception.TekillikIhlaliException;
 import tr.depo.backend.mapper.DemirbasMapper;
@@ -17,6 +19,7 @@ import tr.depo.backend.service.EnvanterService;
 import tr.depo.backend.service.SilmeService;
 import tr.depo.backend.util.SiralamaDogrulayici;
 import tr.depo.domain.envanter.Envanter;
+import tr.depo.domain.ortak.Sicil;
 import tr.depo.domain.tanim.MalzemeTuru;
 
 @Service
@@ -49,6 +52,17 @@ public class DemirbasServiceImpl extends AbstractSoftDeleteServiceImpl<Envanter>
     public SayfaResponse<DemirbasResponse> listele(Pageable sayfa) {
         SiralamaDogrulayici.dogrula(sayfa, SIRALAMA_ALANLARI);
         return SayfaResponse.of(repository.findByTur(MalzemeTuru.DEMIRBAS, sayfa).map(mapper::cevap));
+    }
+
+    @Override
+    public SayfaResponse<DemirbasResponse> zimmetliListele(String zimmetliSicil, Pageable sayfa) {
+        Sicil sicil = Sicil.varsa(zimmetliSicil);
+        if (sicil == null) {
+            throw new GecersizIstekException(HataKodu.GECERSIZ_ISTEK, "zimmetliSicil boş");
+        }
+        SiralamaDogrulayici.dogrula(sayfa, SIRALAMA_ALANLARI);
+        return SayfaResponse.of(repository.findByTurAndZimmetliSicil_Deger(MalzemeTuru.DEMIRBAS, sicil.deger(), sayfa)
+            .map(mapper::cevap));
     }
 
     @Override

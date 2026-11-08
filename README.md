@@ -102,7 +102,7 @@ aggregate'in alt kayıtları aynı transaction'da soft delete edilir.
 | Model | `/modeller` | CRUD (tur) | 409: envanter |
 | Firma | `/firmalar` | CRUD (tur) | 409: ihale |
 | İhale | `/ihaleler` | CRUD (yalnızca demirbaş firması) | 409: envanter |
-| Demirbaş | `/demirbaslar` | CRUD (demirbaş no ve seri no aktif demirbaşlarda tekil: 409; model yalnızca kendi markasıyla, marka boşsa modelden) | barkod, not, aparat, fotoğraf birlikte silinir |
+| Demirbaş | `/demirbaslar` | CRUD; `GET /demirbaslar?zimmetliSicil=…` o sicile şu an zimmetli olanlar (demirbaş no ve seri no aktif demirbaşlarda tekil: 409; model yalnızca kendi markasıyla, marka boşsa modelden) | barkod, not, aparat, fotoğraf birlikte silinir |
 | Sarf malzemesi | `/sarf-malzemeleri` | CRUD | barkod, not, aparat, fotoğraf birlikte silinir |
 | Barkod / not / aparat | `/envanterler/{envanterId}/barkodlar` · `/notlar` · `/aparatlar` | CRUD | — |
 | Arıza | `/arizalar` | CRUD | işlemler birlikte silinir |

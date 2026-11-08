@@ -1,6 +1,7 @@
 package tr.depo.backend.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import tr.depo.backend.dto.CreateDemirbasRequest;
 import tr.depo.backend.dto.DemirbasResponse;
@@ -42,9 +44,14 @@ public class DemirbasController {
 
     @GetMapping
     @Operation(summary = "Demirbaşları listeler",
-        description = "Sayfalı; sıralama alanları: id, demirbasNo, seriNo, ad, kayitTarihi, olusturmaZamani.")
-    public SayfaResponse<DemirbasResponse> listele(@ParameterObject Pageable sayfa) {
-        return demirbasService.listele(sayfa);
+        description = "Sayfalı; sıralama alanları: id, demirbasNo, seriNo, ad, kayitTarihi, olusturmaZamani. "
+            + "zimmetliSicil verilirse yalnızca o sicile şu an zimmetli demirbaşlar (tam eşleşme; boşsa 400).")
+    public SayfaResponse<DemirbasResponse> listele(
+        @Parameter(description = "Zimmetli personelin sicili") @RequestParam(required = false) String zimmetliSicil,
+        @ParameterObject Pageable sayfa) {
+        return zimmetliSicil == null
+            ? demirbasService.listele(sayfa)
+            : demirbasService.zimmetliListele(zimmetliSicil, sayfa);
     }
 
     @PostMapping

@@ -5,10 +5,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
@@ -88,6 +90,16 @@ class EnvanterControllerTest {
             .hasStatus(400)
             .bodyJson().hasPathSatisfying("$.hatalar[0].mesaj",
                 mesaj -> assertThat(mesaj).asString().isEqualTo("Sıfırdan büyük olmalıdır."));
+    }
+
+    @Test
+    void shouldFilterDemirbaslarBySicilOnlyWhenTheParameterIsGiven() {
+        assertThat(mvc.get().uri("/api/v1/demirbaslar").param("zimmetliSicil", "0012345")).hasStatusOk();
+        verify(demirbasService).zimmetliListele(eq("0012345"), any(Pageable.class));
+
+        assertThat(mvc.get().uri("/api/v1/demirbaslar")).hasStatusOk();
+        verify(demirbasService).listele(any(Pageable.class));
+        verifyNoMoreInteractions(demirbasService);
     }
 
     @Test

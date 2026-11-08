@@ -14,6 +14,14 @@ public interface DemirbasService {
     /** Silinmemiş demirbaşlar, sayfalı. */
     SayfaResponse<DemirbasResponse> listele(Pageable sayfa);
 
+    /**
+     * Bir sicile şu an zimmetli olan silinmemiş demirbaşlar, sayfalı. Sicil olduğu gibi (baştaki/sondaki boşluklar
+     * atılarak) aranır; biçimi bilinmediği için baştaki sıfırlar eklenmez/silinmez.
+     *
+     * @throws tr.depo.backend.exception.GecersizIstekException sicil boşsa (400)
+     */
+    SayfaResponse<DemirbasResponse> zimmetliListele(String zimmetliSicil, Pageable sayfa);
+
     DemirbasResponse olustur(CreateDemirbasRequest istek);
 
     DemirbasResponse guncelle(Long id, UpdateDemirbasRequest istek);
