@@ -21,6 +21,7 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.ListCrudRepository;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 import org.springframework.web.bind.annotation.RestController;
+import tr.depo.backend.repository.AktifKayitRepository;
 
 /**
  * Yapısal kurallar build'de zorlanır. En önemlisi fiziksel silmenin uygulama kodunda imkânsız olmasıdır:

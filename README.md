@@ -117,18 +117,20 @@ bağlantısı sonra).
 
 ## Yapı
 
-Package-by-feature: her kaynak kendi paketinde (`controller`, `XService` + `XServiceImpl`, `XRepository`,
-`XMapper`, `dto/`). Ortak altyapı `common/`:
+Katman bazlı, düz paketler (şirket standardı); her entity için `XController`, `XService`, `XServiceImpl`,
+`XRepository`, `XMapper`, `CreateXRequest`, `UpdateXRequest`, `XResponse`. Testler aynı paketleri izler.
 
 | Paket | İçerik |
 |---|---|
-| `common.config` | JPA (entity taraması, UTC audit zamanı), geçici `AuditorAware`, OpenAPI |
-| `common.exception` | `KajuException` hiyerarşisi, `HataKodu`, `GlobalExceptionHandler`, `OracleHataCevirici` |
-| `common.paging` | `SayfaCevabi`, `SiralamaDogrulayici` |
-| `common.persistence` | `AktifKayitRepository` (delete* yok), `AktifKayitlar` (silinmemiş kayıt ya da 404), `ReferansYukleyici` |
-| `common.service` | `SoftDeleteServisSablonu` (silme akışı), `AltKayitServisSablonu` (alt kaynaklar), `SilmeAltyapisi`, `KullanimReferansi` |
-| `common.mapping` | MapStruct ortak ayarı, ilişki özetleri (`IliskiOzeti`), değer nesnesi eşlemeleri |
-| `common.web` | `ApiYollari`, `KaynakKonumu` |
+| `controller` | Tüm controller'lar; `ApiPaths` (sürüm öneki ve envanter alt kaynaklarının üst yolu) |
+| `service` | Servis arayüzleri; ortak olanlar `EnvanterService`, `ReferansService` (aktif referans yükleme), `SilmeService` |
+| `serviceimpl` | Servis implementasyonları; `AbstractSoftDeleteServiceImpl` (silme akışı), `AbstractAltKayitServiceImpl` (alt kaynaklar) |
+| `repository` | Repository'ler; taban `AktifKayitRepository` (delete* yok) |
+| `dto` | İstek/cevap DTO'ları; `SayfaResponse`, `IliskiOzetiResponse`, `KullanimReferansi` |
+| `mapper` | MapStruct mapper'ları; `IliskiOzetiMapper`, `DegerNesnesiMapper` |
+| `exception` | `KajuException` hiyerarşisi, `HataKodu`, `GlobalExceptionHandler`, `OracleHataCevirici` |
+| `config` | JPA (entity taraması, UTC audit zamanı), geçici `AuditorAware`, OpenAPI, MapStruct ortak ayarı |
+| `util` | `AktifKayitUtil` (silinmemiş kayıt ya da 404), `SiralamaDogrulayici`, `KaynakKonumu` |
 
 Mimari kurallar `MimariKurallarTest` (ArchUnit) ile build'de zorlanır: repository'ler `delete*` açan
 arayüzlerden türeyemez, `EntityManager.remove` ve `DELETE` sorgusu yasak, controller entity ve
