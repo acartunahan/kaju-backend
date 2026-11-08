@@ -87,26 +87,39 @@ class ArizaSayimEntegrasyonTesti extends OracleEntegrasyonTestTabani {
     void shouldApplyRowTypeRulesForLocalAndGeneralRows() {
         long sayimId = sayimlar.olustur(ArizaSayimFixture.sayim("YEREL"));
         ApiIstemcisi satir = satirlar(sayimId);
+        ApiIstemcisi genelSatirlar = satirlar(sayimlar.olustur(ArizaSayimFixture.sayim("GENEL")));
 
         assertThat(satir.post(ArizaSayimFixture.yerelSatir("ZIMMET").ile("islem", "DUZELTME")))
             .hasStatus(422).bodyJson().extractingPath("$.detail")
             .isEqualTo("DUZELTME işlemi YEREL sayım satırında kullanılamaz.");
         assertThat(satir.post(ArizaSayimFixture.yerelSatir("SARF").olmadan("zimmetEskiRef"))).hasStatus(422);
-        assertThat(satir.post(ArizaSayimFixture.genelSatir().olmadan("islemTarihi"))).hasStatus(422);
+        assertThat(genelSatirlar.post(ArizaSayimFixture.genelSatir().olmadan("islemTarihi"))).hasStatus(422);
 
         long envanterId = veri.demirbasEnvanter(e -> { });
         assertThat(satir.post(ArizaSayimFixture.yerelSatir("SARF").ile("envanterId", envanterId)))
             .hasStatus(422).bodyJson().extractingPath("$.kod").isEqualTo("IS_KURALI_IHLALI");
 
         long yerelId = satir.olustur(ArizaSayimFixture.yerelSatir("ZIMMET").ile("envanterId", envanterId));
-        long genelId = satir.olustur(ArizaSayimFixture.genelSatir());
-        assertThat(satir.get(genelId)).hasStatusOk().bodyJson()
+        long genelId = genelSatirlar.olustur(ArizaSayimFixture.genelSatir());
+        assertThat(genelSatirlar.get(genelId)).hasStatusOk().bodyJson()
             .hasPathSatisfying("$.anlikMarka", m -> assertThat(m).asString().isEqualTo("Dell"))
             .hasPathSatisfying("$.malzemeTuru", m -> assertThat(m).isNull());
 
         // ZIMMET → SARF: envanter bağlantısı kaldırılarak güncellenebilir
         assertThat(satir.put(yerelId, ArizaSayimFixture.yerelSatir("SARF").guncelleme(0)))
             .hasStatusOk().bodyJson().hasPathSatisfying("$.envanter", e -> assertThat(e).isNull());
+    }
+
+    @Test
+    void shouldRejectRowWhoseTypeDiffersFromSayimScope() {
+        ApiIstemcisi yerelSatirlar = satirlar(sayimlar.olustur(ArizaSayimFixture.sayim("YEREL")));
+        ApiIstemcisi genelSatirlar = satirlar(sayimlar.olustur(ArizaSayimFixture.sayim("GENEL")));
+
+        assertThat(yerelSatirlar.post(ArizaSayimFixture.genelSatir()))
+            .hasStatus(422).bodyJson().extractingPath("$.detail")
+            .isEqualTo("GENEL türündeki satır YEREL sayımına eklenemez.");
+        assertThat(genelSatirlar.post(ArizaSayimFixture.yerelSatir("ZIMMET")))
+            .hasStatus(422).bodyJson().extractingPath("$.kod").isEqualTo("IS_KURALI_IHLALI");
     }
 
     @Test

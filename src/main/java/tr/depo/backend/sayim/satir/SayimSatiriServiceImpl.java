@@ -55,6 +55,7 @@ public class SayimSatiriServiceImpl extends AltKayitServisSablonu<SayimSatiri, S
     @Transactional
     public SayimSatiriResponse olustur(Long sayimId, CreateSayimSatiriRequest istek) {
         Sayim sayim = aktifUst(sayimId);
+        SayimSatiriKurallari.kapsamaUygunOlmali(istek.tur(), sayim.getKapsam());
         SayimSatiriKurallari.dogrula(istek.tur(), istek.islem(), istek.islemTarihi(), istek.malzemeTuru(),
             istek.malzemeEskiRef(), istek.zimmetEskiRef(), istek.envanterId());
         SayimSatiri satir = mapper.yeni(istek);

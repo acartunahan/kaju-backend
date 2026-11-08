@@ -81,6 +81,55 @@ class EnvanterEntegrasyonTesti extends OracleEntegrasyonTestTabani {
     }
 
     @Test
+    void shouldAllowOnlyTheModelsOwnBrandAndFillItWhenBrandIsEmpty() {
+        long dell = veri.marka(MalzemeTuru.DEMIRBAS, "Dell Bilgisayar");
+        long hp = veri.marka(MalzemeTuru.DEMIRBAS, "HP Bilgisayar");
+        long latitude = veri.demirbasModeli(dell, "Latitude 5440");
+
+        assertThat(demirbaslar.post(EnvanterFixture.demirbas().ile("markaId", hp).ile("modelId", latitude)))
+            .hasStatus(422).bodyJson()
+            .hasPathSatisfying("$.alan", a -> assertThat(a).asString().isEqualTo("modelId"))
+            .hasPathSatisfying("$.detail", d -> assertThat(d).asString()
+                .isEqualTo("Seçilen model bu markaya ait değil; yalnızca modelin kendi markası seçilebilir."));
+
+        long markasiz = demirbaslar.olustur(EnvanterFixture.demirbas().ile("modelId", latitude));
+        assertThat(demirbaslar.get(markasiz)).hasStatusOk().bodyJson()
+            .hasPathSatisfying("$.marka.ad", m -> assertThat(m).asString().isEqualTo("Dell Bilgisayar"));
+        assertThat(demirbaslar.post(EnvanterFixture.demirbas().ile("markaId", dell).ile("modelId", latitude)))
+            .hasStatus(201);
+    }
+
+    @Test
+    void shouldKeepDemirbasNoAndSerialNoUniqueAmongActiveDemirbaslar() {
+        long id = demirbaslar.olustur(EnvanterFixture.demirbas().ile("demirbasNo", 900_001).ile("seriNo", "SN-T-1"));
+
+        assertThat(demirbaslar.post(EnvanterFixture.demirbas().ile("demirbasNo", 900_001)))
+            .hasStatus(409).bodyJson()
+            .hasPathSatisfying("$.kod", k -> assertThat(k).asString().isEqualTo("TEKILLIK_IHLALI"))
+            .hasPathSatisfying("$.detail", d -> assertThat(d).asString()
+                .isEqualTo("Bu demirbaş numarası başka bir demirbaşta kullanılıyor."));
+        assertThat(demirbaslar.post(EnvanterFixture.demirbas().ile("seriNo", "SN-T-1")))
+            .hasStatus(409).bodyJson().extractingPath("$.detail")
+            .isEqualTo("Bu seri numarası başka bir demirbaşta kullanılıyor.");
+
+        assertThat(demirbaslar.put(id, EnvanterFixture.demirbas().ile("demirbasNo", 900_001).ile("seriNo", "SN-T-1")
+            .ile("ad", "Yeni ad").guncelleme(0))).as("kendi numarasıyla güncellenebilir").hasStatusOk();
+
+        assertThat(demirbaslar.delete(id)).hasStatus(204);
+        assertThat(demirbaslar.post(EnvanterFixture.demirbas().ile("demirbasNo", 900_001).ile("seriNo", "SN-T-1")))
+            .as("silinmiş kaydın numarası yeniden kullanılabilir").hasStatus(201);
+    }
+
+    @Test
+    void shouldStillUpdateLegacyDuplicateWhenItsNumberIsUnchanged() {
+        long eski = veri.demirbasEnvanter(e -> e.setDemirbasNo(900_100L));
+        veri.demirbasEnvanter(e -> e.setDemirbasNo(900_100L));
+
+        assertThat(demirbaslar.put(eski, EnvanterFixture.demirbas().ile("demirbasNo", 900_100).guncelleme(0)))
+            .hasStatusOk();
+    }
+
+    @Test
     void shouldCreateUpdateAndDeleteSarfMalzemesi() {
         long markaId = veri.marka(MalzemeTuru.SARF, "HP Sarf");
         long id = sarflar.olustur(EnvanterFixture.sarf("Toner 85A").ile("markaId", markaId));

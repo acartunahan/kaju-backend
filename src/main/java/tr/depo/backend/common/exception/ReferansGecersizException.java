@@ -16,13 +16,19 @@ public class ReferansGecersizException extends IsKuraliException {
 
     /** Kayıt var ama bu alana bağlanamıyor (ör. demirbaş kaydına sarf türündeki marka). */
     public static ReferansGecersizException turUyumsuz(String alan, Object id, Object beklenenTur) {
-        return new ReferansGecersizException(alan, id, beklenenTur);
-    }
-
-    private ReferansGecersizException(String alan, Object id, Object beklenenTur) {
-        super(HataKodu.REFERANS_GECERSIZ, "hata.referans-gecersiz.tur",
+        return new ReferansGecersizException(alan, "hata.referans-gecersiz.tur",
             "Referans verilen kaydın türü uygun değil: " + alan + "=" + id + ", beklenen=" + beklenenTur,
             alan, id, beklenenTur);
+    }
+
+    /** Kayıt var ama istekteki başka bir ilişkiyle uyuşmuyor (ör. model, seçilen markaya ait değil). */
+    public static ReferansGecersizException iliskiUyumsuz(String alan, Object id, String mesajAnahtari) {
+        return new ReferansGecersizException(alan, mesajAnahtari,
+            "Referans verilen kayıt diğer ilişkilerle uyuşmuyor: " + alan + "=" + id);
+    }
+
+    private ReferansGecersizException(String alan, String mesajAnahtari, String logMesaji, Object... argumanlar) {
+        super(HataKodu.REFERANS_GECERSIZ, mesajAnahtari, logMesaji, argumanlar);
         this.alan = alan;
     }
 

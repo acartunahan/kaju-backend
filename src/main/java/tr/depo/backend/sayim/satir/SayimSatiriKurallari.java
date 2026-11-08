@@ -16,8 +16,20 @@ final class SayimSatiriKurallari {
     static final String YEREL_ZORUNLU = "sayim-satiri.yerel-zorunlu";
     static final String GENEL_TARIH_ZORUNLU = "sayim-satiri.genel-tarih-zorunlu";
     static final String ENVANTER_YALNIZ_ZIMMET = "sayim-satiri.envanter-yalniz-zimmet";
+    static final String KAPSAM_UYUMSUZ = "sayim-satiri.kapsam-uyumsuz";
 
     private SayimSatiriKurallari() {
+    }
+
+    /**
+     * Yeni satırın türü sayımın kapsamıyla aynı olmalı (yerel sayıma yerel satır). Yalnızca yeni satırda uygulanır:
+     * domain bu tutarlılığı legacy veri yüzünden zorlamaz (HANDOFF 5.16) ve satırın türü sonradan değişmez.
+     */
+    static void kapsamaUygunOlmali(SayimKapsami satirTuru, SayimKapsami sayimKapsami) {
+        if (satirTuru != sayimKapsami) {
+            throw new IsKuraliException(KAPSAM_UYUMSUZ, satirTuru + " satırı " + sayimKapsami + " sayımına eklenemez",
+                satirTuru, sayimKapsami);
+        }
     }
 
     static void dogrula(SayimKapsami tur, SayimIslemi islem, LocalDateTime islemTarihi, YerelSayimTuru malzemeTuru,

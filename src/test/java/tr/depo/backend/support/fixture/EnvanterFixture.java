@@ -1,14 +1,20 @@
 package tr.depo.backend.support.fixture;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 /** Envanter kaynakları (demirbaş, sarf, barkod, not, aparat) için geçerli varsayılan istek gövdeleri. */
 public final class EnvanterFixture {
+
+    /** Demirbaş no ve seri no tekil olmalı: her çağrıda yeni değer (testler aynı veritabanını paylaşır). */
+    private static final AtomicLong SAYAC = new AtomicLong(100_000);
 
     private EnvanterFixture() {
     }
 
     public static IstekGovdesi demirbas() {
-        return IstekGovdesi.yeni("durum", "NORMAL", "kayitTarihi", TanimFixture.TARIH, "demirbasNo", 100245,
-            "seriNo", "SN-ABC-001", "ad", "Dizüstü Bilgisayar", "alimYolu", "BILGI_ISLEM_DB", "zimmetliSicil", "01234",
+        long numara = SAYAC.incrementAndGet();
+        return IstekGovdesi.yeni("durum", "NORMAL", "kayitTarihi", TanimFixture.TARIH, "demirbasNo", numara,
+            "seriNo", "SN-" + numara, "ad", "Dizüstü Bilgisayar", "alimYolu", "BILGI_ISLEM_DB", "zimmetliSicil", "01234",
             "garantiBaslangic", "2026-01-01T00:00:00", "garantiBitis", "2028-01-01T00:00:00");
     }
 

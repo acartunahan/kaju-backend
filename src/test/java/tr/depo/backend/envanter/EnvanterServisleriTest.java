@@ -31,6 +31,9 @@ import tr.depo.backend.envanter.barkod.BarkodServiceImpl;
 import tr.depo.backend.envanter.demirbas.DemirbasMapperImpl;
 import tr.depo.backend.envanter.demirbas.DemirbasServiceImpl;
 import tr.depo.backend.envanter.demirbas.dto.CreateDemirbasRequest;
+import tr.depo.backend.envanter.demirbas.dto.UpdateDemirbasRequest;
+import tr.depo.backend.common.exception.TekillikIhlaliException;
+import tr.depo.domain.tanim.MalzemeTuru;
 import tr.depo.backend.envanter.sarf.SarfMalzemesiMapperImpl;
 import tr.depo.backend.envanter.sarf.SarfMalzemesiServiceImpl;
 import tr.depo.domain.envanter.Barkod;
@@ -95,6 +98,37 @@ class EnvanterServisleriTest {
         when(envanterRepository.save(any(Envanter.class))).thenAnswer(cagri -> cagri.getArgument(0));
 
         assertThat(demirbasServisi.olustur(demirbasIstegi(TARIH, null)).garantiBaslangic()).isEqualTo(TARIH);
+    }
+
+    @Test
+    void shouldRejectDemirbasNoOrSerialNoUsedByAnotherActiveDemirbas() {
+        when(envanterRepository.existsByTurAndDemirbasNo(MalzemeTuru.DEMIRBAS, 7L)).thenReturn(true);
+        assertThatThrownBy(() -> demirbasServisi.olustur(numarali(7L, null)))
+            .isInstanceOf(TekillikIhlaliException.class);
+
+        when(envanterRepository.existsByTurAndSeriNo(MalzemeTuru.DEMIRBAS, "SN-1")).thenReturn(true);
+        assertThatThrownBy(() -> demirbasServisi.olustur(numarali(null, "SN-1")))
+            .isInstanceOf(TekillikIhlaliException.class);
+        verify(envanterRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldNotCheckUniquenessWhenNumbersAreUnchangedOnUpdate() {
+        Envanter legacyTekrari = Envanter.demirbas(DemirbasDurumu.NORMAL, TARIH);
+        legacyTekrari.setDemirbasNo(7L);
+        legacyTekrari.setSeriNo("SN-1");
+        when(envanterRepository.findById(ID)).thenReturn(Optional.of(legacyTekrari));
+
+        demirbasServisi.guncelle(ID, new UpdateDemirbasRequest(0, DemirbasDurumu.NORMAL, TARIH, 7L, "SN-1", "Laptop",
+            null, null, null, null, null, null, null, null, null, null, null, null, null, null));
+
+        verify(envanterRepository, never()).existsByTurAndDemirbasNo(any(), any());
+        verify(envanterRepository, never()).existsByTurAndSeriNo(any(), any());
+    }
+
+    private static CreateDemirbasRequest numarali(Long demirbasNo, String seriNo) {
+        return new CreateDemirbasRequest(DemirbasDurumu.NORMAL, TARIH, demirbasNo, seriNo, "Laptop", null, null, null,
+            null, null, null, null, null, null, null, null, null, null, null);
     }
 
     @Test

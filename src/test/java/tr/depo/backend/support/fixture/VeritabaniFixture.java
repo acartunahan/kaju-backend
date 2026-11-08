@@ -41,6 +41,16 @@ public final class VeritabaniFixture {
         return kaydet(new Marka(tur, ad));
     }
 
+    public long demirbasModeli(long markaId, String ad) {
+        return islem.execute(durum -> {
+            Model model = Model.demirbasModeli(ad);
+            model.setMarka(entityManager.find(Marka.class, markaId));
+            entityManager.persist(model);
+            entityManager.flush();
+            return model.getId();
+        });
+    }
+
     public long sarfModeli(long markaId, String ad) {
         return islem.execute(durum -> {
             Model model = Model.sarfModeli(entityManager.find(Marka.class, markaId), ad, true);

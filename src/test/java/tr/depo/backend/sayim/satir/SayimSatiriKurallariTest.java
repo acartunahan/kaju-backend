@@ -38,6 +38,16 @@ class SayimSatiriKurallariTest {
     }
 
     @Test
+    void shouldRequireRowTypeToMatchSayimScope() {
+        assertThatThrownBy(() -> SayimSatiriKurallari.kapsamaUygunOlmali(SayimKapsami.GENEL, SayimKapsami.YEREL))
+            .isInstanceOf(IsKuraliException.class);
+        assertThatThrownBy(() -> SayimSatiriKurallari.kapsamaUygunOlmali(SayimKapsami.YEREL, SayimKapsami.GENEL))
+            .isInstanceOf(IsKuraliException.class);
+        assertThatCode(() -> SayimSatiriKurallari.kapsamaUygunOlmali(SayimKapsami.YEREL, SayimKapsami.YEREL))
+            .doesNotThrowAnyException();
+    }
+
+    @Test
     void shouldAllowEnvanterOnlyForZimmetLocalRow() {
         assertThatThrownBy(() -> SayimSatiriKurallari.dogrula(SayimKapsami.YEREL, SayimIslemi.SAYILDI, null,
                 YerelSayimTuru.SARF, "M", "Z", 5L))
