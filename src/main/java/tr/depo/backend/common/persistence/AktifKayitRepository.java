@@ -24,4 +24,10 @@ public interface AktifKayitRepository<T extends BaseEntity> extends Repository<T
     <S extends T> S save(S kayit);
 
     Page<T> findAll(Pageable sayfa);
+
+    /**
+     * Bekleyen değişiklikleri veritabanına yazar. Cevapta güncel {@code versiyon} dönebilmesi ve kısıt ihlallerinin
+     * servis içinde (transaction bitmeden) oluşması için oluşturma/güncellemeden sonra çağrılır.
+     */
+    void flush();
 }
