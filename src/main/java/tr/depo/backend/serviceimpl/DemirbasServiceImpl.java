@@ -1,11 +1,16 @@
 package tr.depo.backend.serviceimpl;
 
+import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Stream;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tr.depo.backend.dto.CreateDemirbasRequest;
+import tr.depo.backend.dto.DemirbasFiltreRequest;
 import tr.depo.backend.dto.DemirbasResponse;
+import tr.depo.backend.dto.EnvanterAramaKriteri;
 import tr.depo.backend.dto.SayfaResponse;
 import tr.depo.backend.dto.UpdateDemirbasRequest;
 import tr.depo.backend.exception.GecersizIstekException;
@@ -31,6 +36,8 @@ public class DemirbasServiceImpl extends AbstractSoftDeleteServiceImpl<Envanter>
     static final String DEMIRBAS_NO_TEKIL = "demirbas.demirbas-no-tekil";
     static final String SERI_NO_TEKIL = "demirbas.seri-no-tekil";
     static final Set<String> SIRALAMA_ALANLARI = Set.of("id", "demirbasNo", "seriNo", "ad", "kayitTarihi", "olusturmaZamani");
+    /** Barkod/seri no legacy'de tekrarlı olabilir; bulma cevabı en fazla bu kadar kayıt döner. */
+    static final int BUL_EN_FAZLA = 100;
 
     private final EnvanterRepository repository;
     private final DemirbasMapper mapper;
@@ -52,20 +59,27 @@ public class DemirbasServiceImpl extends AbstractSoftDeleteServiceImpl<Envanter>
     }
 
     @Override
-    public SayfaResponse<DemirbasResponse> listele(Pageable sayfa) {
+    public SayfaResponse<DemirbasResponse> listele(DemirbasFiltreRequest filtre, Pageable sayfa) {
+        Sicil sicil = null;
+        if (filtre.zimmetliSicil() != null) {
+            sicil = Sicil.varsa(filtre.zimmetliSicil());
+            if (sicil == null) {
+                throw new GecersizIstekException(HataKodu.GECERSIZ_ISTEK, "zimmetliSicil boş");
+            }
+        }
         SiralamaDogrulayici.dogrula(sayfa, SIRALAMA_ALANLARI);
-        return SayfaResponse.of(repository.findByTur(MalzemeTuru.DEMIRBAS, sayfa).map(mapper::cevap));
+        return SayfaResponse.of(envanterService.ara(EnvanterAramaKriteri.demirbas(filtre, sicil), sayfa)
+            .map(mapper::cevap));
     }
 
     @Override
-    public SayfaResponse<DemirbasResponse> zimmetliListele(String zimmetliSicil, Pageable sayfa) {
-        Sicil sicil = Sicil.varsa(zimmetliSicil);
-        if (sicil == null) {
-            throw new GecersizIstekException(HataKodu.GECERSIZ_ISTEK, "zimmetliSicil boş");
+    public List<DemirbasResponse> bul(String barkod, String seriNo, Long demirbasNo) {
+        EnvanterAramaKriteri kriter = EnvanterAramaKriteri.demirbasBul(barkod, seriNo, demirbasNo);
+        long verilen = Stream.of(kriter.barkod(), kriter.seriNo(), kriter.demirbasNo()).filter(Objects::nonNull).count();
+        if (verilen != 1) {
+            throw new GecersizIstekException(HataKodu.GECERSIZ_ISTEK, "barkod, seriNo, demirbasNo'dan tam biri verilmeli");
         }
-        SiralamaDogrulayici.dogrula(sayfa, SIRALAMA_ALANLARI);
-        return SayfaResponse.of(repository.findByTurAndZimmetliSicil_Deger(MalzemeTuru.DEMIRBAS, sicil.deger(), sayfa)
-            .map(mapper::cevap));
+        return envanterService.bul(kriter, BUL_EN_FAZLA).stream().map(mapper::cevap).toList();
     }
 
     @Override

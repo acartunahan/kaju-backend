@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import tr.depo.backend.dto.CreateModelRequest;
+import tr.depo.backend.dto.ModelFiltreRequest;
 import tr.depo.backend.dto.ModelResponse;
 import tr.depo.backend.dto.SayfaResponse;
 import tr.depo.backend.dto.UpdateModelRequest;
@@ -41,9 +42,12 @@ public class ModelController {
     }
 
     @GetMapping
-    @Operation(summary = "Modelleri listeler", description = "Sayfalı; sıralama alanları: id, tur, ad, kayitTarihi, olusturmaZamani.")
-    public SayfaResponse<ModelResponse> listele(@ParameterObject Pageable sayfa) {
-        return modelService.listele(sayfa);
+    @Operation(summary = "Modelleri listeler",
+        description = "Sayfalı; sıralama alanları: id, tur, ad, kayitTarihi, olusturmaZamani. Filtreler birlikte "
+            + "uygulanır: tur, markaId (seçilen markanın modelleri), kategoriId, ad (içerir), aktif.")
+    public SayfaResponse<ModelResponse> listele(@Valid @ParameterObject ModelFiltreRequest filtre,
+                                                @ParameterObject Pageable sayfa) {
+        return modelService.listele(filtre, sayfa);
     }
 
     @PostMapping

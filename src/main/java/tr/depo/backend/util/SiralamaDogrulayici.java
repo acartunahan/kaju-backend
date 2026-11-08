@@ -1,6 +1,7 @@
 package tr.depo.backend.util;
 
 import java.util.Set;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import tr.depo.backend.exception.GecersizIstekException;
@@ -26,5 +27,12 @@ public final class SiralamaDogrulayici {
             }
         }
         return sayfa;
+    }
+
+    /** Sıralama verilmemişse varsayılan sıralamayla aynı sayfa (ör. geçmiş listelerinde en yeni önce). */
+    public static Pageable varsayilanSiralama(Pageable sayfa, Sort varsayilan) {
+        return sayfa.getSort().isSorted() || sayfa.isUnpaged()
+            ? sayfa
+            : PageRequest.of(sayfa.getPageNumber(), sayfa.getPageSize(), varsayilan);
     }
 }

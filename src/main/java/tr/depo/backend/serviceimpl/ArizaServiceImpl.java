@@ -2,6 +2,7 @@ package tr.depo.backend.serviceimpl;
 
 import java.util.Set;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tr.depo.backend.dto.ArizaResponse;
@@ -11,6 +12,7 @@ import tr.depo.backend.dto.UpdateArizaRequest;
 import tr.depo.backend.mapper.ArizaMapper;
 import tr.depo.backend.repository.ArizaRepository;
 import tr.depo.backend.service.ArizaService;
+import tr.depo.backend.service.EnvanterService;
 import tr.depo.backend.service.ReferansService;
 import tr.depo.backend.service.SilmeService;
 import tr.depo.backend.util.SiralamaDogrulayici;
@@ -18,6 +20,7 @@ import tr.depo.domain.ariza.Ariza;
 import tr.depo.domain.ariza.ArizaIslemi;
 import tr.depo.domain.envanter.Envanter;
 import tr.depo.domain.tanim.Depo;
+import tr.depo.domain.tanim.MalzemeTuru;
 
 @Service
 @Transactional(readOnly = true)
@@ -25,19 +28,22 @@ public class ArizaServiceImpl extends AbstractSoftDeleteServiceImpl<Ariza> imple
 
     static final String KAYNAK = "Arıza";
     static final Set<String> SIRALAMA_ALANLARI = Set.of("id", "tarih", "miad", "olusturmaZamani");
+    private static final Sort EN_YENI_ONCE = Sort.by(Sort.Direction.DESC, "tarih", "id");
 
     private final ArizaRepository repository;
     private final ArizaMapper mapper;
     private final ReferansService referansService;
     private final SilmeService silmeService;
+    private final EnvanterService envanterService;
 
     public ArizaServiceImpl(ArizaRepository repository, ArizaMapper mapper, ReferansService referansService,
-                            SilmeService silmeService) {
+                            SilmeService silmeService, EnvanterService envanterService) {
         super(repository, silmeService, KAYNAK);
         this.repository = repository;
         this.mapper = mapper;
         this.referansService = referansService;
         this.silmeService = silmeService;
+        this.envanterService = envanterService;
     }
 
     @Override
@@ -49,6 +55,14 @@ public class ArizaServiceImpl extends AbstractSoftDeleteServiceImpl<Ariza> imple
     public SayfaResponse<ArizaResponse> listele(Pageable sayfa) {
         SiralamaDogrulayici.dogrula(sayfa, SIRALAMA_ALANLARI);
         return SayfaResponse.of(repository.findAll(sayfa).map(mapper::cevap));
+    }
+
+    @Override
+    public SayfaResponse<ArizaResponse> demirbasArizalari(Long demirbasId, Pageable sayfa) {
+        envanterService.aktifBul(demirbasId, MalzemeTuru.DEMIRBAS, "Demirbaş");
+        SiralamaDogrulayici.dogrula(sayfa, SIRALAMA_ALANLARI);
+        return SayfaResponse.of(repository.findByEnvanter_Id(demirbasId,
+            SiralamaDogrulayici.varsayilanSiralama(sayfa, EN_YENI_ONCE)).map(mapper::cevap));
     }
 
     @Override

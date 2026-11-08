@@ -10,6 +10,7 @@ import tr.depo.backend.dto.CreateFirmaRequest;
 import tr.depo.backend.dto.FirmaResponse;
 import tr.depo.backend.dto.KullanimReferansi;
 import tr.depo.backend.dto.SayfaResponse;
+import tr.depo.backend.dto.TurFiltreRequest;
 import tr.depo.backend.dto.UpdateFirmaRequest;
 import tr.depo.backend.exception.IsKuraliException;
 import tr.depo.backend.mapper.FirmaMapper;
@@ -54,9 +55,9 @@ public class FirmaServiceImpl extends AbstractSoftDeleteServiceImpl<Firma> imple
     }
 
     @Override
-    public SayfaResponse<FirmaResponse> listele(Pageable sayfa) {
+    public SayfaResponse<FirmaResponse> listele(TurFiltreRequest filtre, Pageable sayfa) {
         SiralamaDogrulayici.dogrula(sayfa, SIRALAMA_ALANLARI);
-        return SayfaResponse.of(repository.findAll(sayfa).map(mapper::cevap));
+        return SayfaResponse.of(repository.filtrele(filtre.tur(), sayfa).map(mapper::cevap));
     }
 
     @Override

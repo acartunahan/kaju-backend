@@ -2,6 +2,7 @@ package tr.depo.backend.serviceimpl;
 
 import java.util.Set;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tr.depo.backend.dto.CreateEnvanterHareketiRequest;
@@ -11,6 +12,7 @@ import tr.depo.backend.exception.IsKuraliException;
 import tr.depo.backend.mapper.EnvanterHareketiMapper;
 import tr.depo.backend.repository.EnvanterHareketiRepository;
 import tr.depo.backend.service.EnvanterHareketiService;
+import tr.depo.backend.service.EnvanterService;
 import tr.depo.backend.service.ReferansService;
 import tr.depo.backend.util.AktifKayitUtil;
 import tr.depo.backend.util.SiralamaDogrulayici;
@@ -27,15 +29,19 @@ public class EnvanterHareketiServiceImpl implements EnvanterHareketiService {
     static final String DEMIRBAS_HAREKET_NO_ZORUNLU = "hareket.demirbas-hareket-no-zorunlu";
     static final Set<String> SIRALAMA_ALANLARI = Set.of("id", "kayitTarihi", "olusturmaZamani");
 
+    private static final Sort EN_YENI_ONCE = Sort.by(Sort.Direction.DESC, "kayitTarihi", "id");
+
     private final EnvanterHareketiRepository repository;
     private final EnvanterHareketiMapper mapper;
     private final ReferansService referansService;
+    private final EnvanterService envanterService;
 
     public EnvanterHareketiServiceImpl(EnvanterHareketiRepository repository, EnvanterHareketiMapper mapper,
-                                       ReferansService referansService) {
+                                       ReferansService referansService, EnvanterService envanterService) {
         this.repository = repository;
         this.mapper = mapper;
         this.referansService = referansService;
+        this.envanterService = envanterService;
     }
 
     @Override
@@ -44,9 +50,28 @@ public class EnvanterHareketiServiceImpl implements EnvanterHareketiService {
     }
 
     @Override
-    public SayfaResponse<EnvanterHareketiResponse> listele(Pageable sayfa) {
+    public SayfaResponse<EnvanterHareketiResponse> listele(Long depoId, Pageable sayfa) {
         SiralamaDogrulayici.dogrula(sayfa, SIRALAMA_ALANLARI);
-        return SayfaResponse.of(repository.findAll(sayfa).map(mapper::cevap));
+        return SayfaResponse.of((depoId == null ? repository.findAll(sayfa) : repository.deponunHareketleri(depoId, sayfa))
+            .map(mapper::cevap));
+    }
+
+    @Override
+    public SayfaResponse<EnvanterHareketiResponse> demirbasHareketleri(Long demirbasId, Pageable sayfa) {
+        return envanterHareketleri(demirbasId, MalzemeTuru.DEMIRBAS, "Demirbaş", sayfa);
+    }
+
+    @Override
+    public SayfaResponse<EnvanterHareketiResponse> sarfHareketleri(Long sarfMalzemesiId, Pageable sayfa) {
+        return envanterHareketleri(sarfMalzemesiId, MalzemeTuru.SARF, "Sarf malzemesi", sayfa);
+    }
+
+    private SayfaResponse<EnvanterHareketiResponse> envanterHareketleri(Long envanterId, MalzemeTuru tur, String kaynakAdi,
+                                                                       Pageable sayfa) {
+        envanterService.aktifBul(envanterId, tur, kaynakAdi);
+        SiralamaDogrulayici.dogrula(sayfa, SIRALAMA_ALANLARI);
+        return SayfaResponse.of(repository.findByEnvanter_Id(envanterId,
+            SiralamaDogrulayici.varsayilanSiralama(sayfa, EN_YENI_ONCE)).map(mapper::cevap));
     }
 
     @Override

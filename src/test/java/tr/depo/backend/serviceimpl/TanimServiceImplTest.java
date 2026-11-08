@@ -9,20 +9,24 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 import tr.depo.backend.dto.CreateDepoRequest;
 import tr.depo.backend.dto.CreateFirmaRequest;
 import tr.depo.backend.dto.CreateIhaleRequest;
 import tr.depo.backend.dto.CreateKategoriRequest;
 import tr.depo.backend.dto.CreateModelRequest;
 import tr.depo.backend.dto.FirmaResponse;
+import tr.depo.backend.dto.KategoriAgacResponse;
 import tr.depo.backend.dto.KullanimReferansi;
 import tr.depo.backend.dto.ModelResponse;
+import tr.depo.backend.dto.TurFiltreRequest;
 import tr.depo.backend.exception.IsKuraliException;
 import tr.depo.backend.exception.KayitKullanimdaException;
 import tr.depo.backend.exception.ReferansGecersizException;
@@ -149,6 +153,33 @@ class TanimServiceImplTest {
         private KategoriServiceImpl servis() {
             return new KategoriServiceImpl(repository, new KategoriMapperImpl(new IliskiOzetiMapper()),
                 referansService, silmeService);
+        }
+
+        private static Kategori kategori(long id, String ad, Kategori ust) {
+            Kategori kategori = Kategori.sarfKategorisi(ad);
+            ReflectionTestUtils.setField(kategori, "id", id);
+            ReflectionTestUtils.setField(kategori, "ust", ust);
+            return kategori;
+        }
+
+        @Test
+        void shouldBuildTreeAndKeepLegacyCycleAndOrphanNodesAsRoots() {
+            Kategori kok = kategori(1L, "Kırtasiye", null);
+            Kategori kalem = kategori(2L, "Kalem", kok);
+            Kategori silinmisUst = kategori(9L, "Silinmiş", null);
+            Kategori yetim = kategori(3L, "Yetim", silinmisUst);
+            Kategori dongu1 = kategori(4L, "Döngü A", null);
+            Kategori dongu2 = kategori(5L, "Döngü B", dongu1);
+            ReflectionTestUtils.setField(dongu1, "ust", dongu2);
+            when(repository.agacIcin(MalzemeTuru.SARF)).thenReturn(List.of(kok, kalem, yetim, dongu1, dongu2));
+
+            List<KategoriAgacResponse> agac = servis().agac(new TurFiltreRequest(MalzemeTuru.SARF));
+
+            assertThat(agac).extracting(KategoriAgacResponse::id).containsExactly(1L, 3L, 4L);
+            assertThat(agac.getFirst().altKategoriler()).extracting(KategoriAgacResponse::id).containsExactly(2L);
+            assertThat(agac.get(2).altKategoriler()).as("döngü kırıldı, kayıt kaybolmadı")
+                .extracting(KategoriAgacResponse::id).containsExactly(5L);
+            assertThat(agac.get(2).altKategoriler().getFirst().altKategoriler()).isEmpty();
         }
 
         @Test

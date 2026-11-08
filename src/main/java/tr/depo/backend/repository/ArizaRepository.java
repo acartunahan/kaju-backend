@@ -10,4 +10,8 @@ public interface ArizaRepository extends AktifKayitRepository<Ariza> {
     @Override
     @EntityGraph(attributePaths = {"envanter", "depo"})
     Page<Ariza> findAll(Pageable sayfa);
+
+    /** Bir envanterin silinmemiş arızaları. */
+    @EntityGraph(attributePaths = {"envanter", "depo"})
+    Page<Ariza> findByEnvanter_Id(Long envanterId, Pageable sayfa);
 }

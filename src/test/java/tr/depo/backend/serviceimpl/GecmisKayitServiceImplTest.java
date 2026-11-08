@@ -26,6 +26,7 @@ import tr.depo.backend.mapper.IliskiOzetiMapper;
 import tr.depo.backend.mapper.ZimmetKaydiMapperImpl;
 import tr.depo.backend.repository.EnvanterHareketiRepository;
 import tr.depo.backend.repository.ZimmetKaydiRepository;
+import tr.depo.backend.service.EnvanterService;
 import tr.depo.backend.service.ReferansService;
 import tr.depo.domain.envanter.Envanter;
 import tr.depo.domain.envanter.EnvanterHareketi;
@@ -45,10 +46,13 @@ class GecmisKayitServiceImplTest {
     private ZimmetKaydiRepository zimmetRepository;
     @Mock
     private ReferansService referansService;
+    @Mock
+    private EnvanterService envanterService;
 
     private EnvanterHareketiServiceImpl hareketServisi() {
         return new EnvanterHareketiServiceImpl(hareketRepository,
-            new EnvanterHareketiMapperImpl(new IliskiOzetiMapper(), new DegerNesnesiMapper()), referansService);
+            new EnvanterHareketiMapperImpl(new IliskiOzetiMapper(), new DegerNesnesiMapper()), referansService,
+            envanterService);
     }
 
     private static CreateEnvanterHareketiRequest hareket(MalzemeTuru tur, Long envanterId, BigDecimal hareketNo) {

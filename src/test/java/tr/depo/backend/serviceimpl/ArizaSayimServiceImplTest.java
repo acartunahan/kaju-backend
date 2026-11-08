@@ -22,6 +22,7 @@ import tr.depo.backend.mapper.SayimMapperImpl;
 import tr.depo.backend.repository.ArizaIslemiRepository;
 import tr.depo.backend.repository.ArizaRepository;
 import tr.depo.backend.repository.SayimRepository;
+import tr.depo.backend.service.EnvanterService;
 import tr.depo.backend.service.ReferansService;
 import tr.depo.backend.service.SilmeService;
 import tr.depo.domain.ariza.Ariza;
@@ -46,6 +47,8 @@ class ArizaSayimServiceImplTest {
     private ReferansService referansService;
     @Mock
     private SilmeService silmeService;
+    @Mock
+    private EnvanterService envanterService;
 
     private static Ariza ariza() {
         return new Ariza(new Sicil("0012345"), "Ekran", BigDecimal.ONE, TARIH);
@@ -54,7 +57,8 @@ class ArizaSayimServiceImplTest {
     @Test
     void shouldSoftDeleteOperationsWhenArizaIsDeleted() {
         ArizaServiceImpl servis = new ArizaServiceImpl(arizaRepository,
-            new ArizaMapperImpl(new IliskiOzetiMapper(), new DegerNesnesiMapper()), referansService, silmeService);
+            new ArizaMapperImpl(new IliskiOzetiMapper(), new DegerNesnesiMapper()), referansService, silmeService,
+            envanterService);
         Ariza ariza = ariza();
         when(arizaRepository.findById(1L)).thenReturn(Optional.of(ariza));
         when(silmeService.silen()).thenReturn("API");

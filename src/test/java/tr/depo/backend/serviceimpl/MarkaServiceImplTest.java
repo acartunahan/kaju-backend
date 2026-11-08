@@ -18,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import tr.depo.backend.dto.KullanimReferansi;
+import tr.depo.backend.dto.MarkaFiltreRequest;
 import tr.depo.backend.dto.MarkaResponse;
 import tr.depo.backend.exception.GecersizIstekException;
 import tr.depo.backend.exception.IsKuraliException;
@@ -132,9 +133,9 @@ class MarkaServiceImplTest {
 
     @Test
     void shouldRejectSortingByNotAllowedField() {
-        assertThatThrownBy(() -> servis.listele(PageRequest.of(0, 20, Sort.by("depo.ad"))))
+        assertThatThrownBy(() -> servis.listele(new MarkaFiltreRequest(null, null, null), PageRequest.of(0, 20, Sort.by("depo.ad"))))
             .isInstanceOf(GecersizIstekException.class);
-        verify(repository, never()).findAll(any(PageRequest.class));
+        verify(repository, never()).filtrele(any(), any(), any(), any());
     }
 
     @Test

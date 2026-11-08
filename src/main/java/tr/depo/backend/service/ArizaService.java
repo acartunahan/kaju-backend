@@ -14,6 +14,13 @@ public interface ArizaService {
     /** Silinmemiş arızalar, sayfalı. */
     SayfaResponse<ArizaResponse> listele(Pageable sayfa);
 
+    /**
+     * Bir demirbaşın arızaları, sayfalı; sıralama verilmezse en yeni önce.
+     *
+     * @throws tr.depo.backend.exception.KayitBulunamadiException demirbaş yoksa, silinmişse ya da sarf ise (404)
+     */
+    SayfaResponse<ArizaResponse> demirbasArizalari(Long demirbasId, Pageable sayfa);
+
     ArizaResponse olustur(CreateArizaRequest istek);
 
     ArizaResponse guncelle(Long id, UpdateArizaRequest istek);

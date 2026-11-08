@@ -3,6 +3,7 @@ package tr.depo.backend.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.List;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -15,8 +16,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import tr.depo.backend.dto.CreateKategoriRequest;
+import tr.depo.backend.dto.KategoriAgacResponse;
+import tr.depo.backend.dto.KategoriFiltreRequest;
 import tr.depo.backend.dto.KategoriResponse;
 import tr.depo.backend.dto.SayfaResponse;
+import tr.depo.backend.dto.TurFiltreRequest;
 import tr.depo.backend.dto.UpdateKategoriRequest;
 import tr.depo.backend.service.KategoriService;
 import tr.depo.backend.util.KaynakKonumu;
@@ -41,9 +45,19 @@ public class KategoriController {
     }
 
     @GetMapping
-    @Operation(summary = "Kategorileri listeler", description = "Sayfalı; sıralama alanları: id, tur, ad, kayitTarihi, olusturmaZamani.")
-    public SayfaResponse<KategoriResponse> listele(@ParameterObject Pageable sayfa) {
-        return kategoriService.listele(sayfa);
+    @Operation(summary = "Kategorileri listeler",
+        description = "Sayfalı; sıralama alanları: id, tur, ad, kayitTarihi, olusturmaZamani. Filtreler birlikte "
+            + "uygulanır: tur, ad (içerir), ustKategoriId (doğrudan alt kategoriler).")
+    public SayfaResponse<KategoriResponse> listele(@Valid @ParameterObject KategoriFiltreRequest filtre,
+                                                   @ParameterObject Pageable sayfa) {
+        return kategoriService.listele(filtre, sayfa);
+    }
+
+    @GetMapping("/agac")
+    @Operation(summary = "Kategori ağacını getirir",
+        description = "Silinmemiş kategoriler iç içe (ada göre sıralı); tur verilirse yalnızca o türden. Sayfasız.")
+    public List<KategoriAgacResponse> agac(@ParameterObject TurFiltreRequest filtre) {
+        return kategoriService.agac(filtre);
     }
 
     @PostMapping
