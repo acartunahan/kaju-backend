@@ -33,7 +33,6 @@ public class ModelServiceImpl extends AbstractSoftDeleteServiceImpl<Model> imple
     static final String KATEGORI_ALANI = "kategoriId";
     static final String DEPO_ALANI = "depoId";
     static final String SARF_ZORUNLU = "model.sarf-zorunlu";
-    static final String SARF_MARKA_ZORUNLU = "model.sarf-marka-zorunlu";
     static final Set<String> SIRALAMA_ALANLARI = Set.of("id", "tur", "ad", "kayitTarihi", "olusturmaZamani");
 
     private static final List<KullanimReferansi> KULLANIM_REFERANSLARI = List.of(
@@ -65,7 +64,6 @@ public class ModelServiceImpl extends AbstractSoftDeleteServiceImpl<Model> imple
     @Override
     @Transactional
     public ModelResponse olustur(CreateModelRequest istek) {
-        sarfMarkaZorunlu(istek.tur(), istek.markaId());
         Marka marka = marka(istek.markaId(), istek.tur());
         Model model = mapper.yeni(istek, marka);
         model.setMarka(marka);
@@ -103,13 +101,6 @@ public class ModelServiceImpl extends AbstractSoftDeleteServiceImpl<Model> imple
 
     private Kategori kategori(Long kategoriId, MalzemeTuru tur) {
         return referansService.aktifVeAyniTurde(Kategori.class, kategoriId, KATEGORI_ALANI, tur, Kategori::getTur);
-    }
-
-    /** Yeni sarf modelinde marka zorunlu; aktif boşsa {@code true} olur (mapper, Marka ile aynı davranış). */
-    private static void sarfMarkaZorunlu(MalzemeTuru tur, Long markaId) {
-        if (tur == MalzemeTuru.SARF && markaId == null) {
-            throw new IsKuraliException(SARF_MARKA_ZORUNLU, "Sarf modelinde markaId zorunlu");
-        }
     }
 
     /** Domain kuralı (CK_MODEL_SARF): PUT tam güncellemedir; sarf modelinde marka ve aktif boşaltılamaz (422). */

@@ -47,7 +47,7 @@ public class SarfMalzemesiController {
     }
 
     @PostMapping
-    @Operation(summary = "Sarf malzemesi oluşturur", description = "Kategori, marka ve model SARF türünde olmalı (422).")
+    @Operation(summary = "Sarf malzemesi oluşturur", description = "Kategori, marka ve model zorunlu (eksikse 400), SARF türünde olmalı ve model seçilen markaya ait olmalı (422).")
     public ResponseEntity<SarfMalzemesiResponse> olustur(@Valid @RequestBody CreateSarfMalzemesiRequest istek) {
         SarfMalzemesiResponse olusan = sarfMalzemesiService.olustur(istek);
         return ResponseEntity.created(KaynakKonumu.yeniKayit(olusan.id())).body(olusan);

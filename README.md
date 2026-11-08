@@ -99,11 +99,11 @@ aggregate'in alt kayıtları aynı transaction'da soft delete edilir.
 | Depo | `/depolar` | CRUD | 409: depoya bağlı aktif kayıt |
 | Kategori | `/kategoriler` | CRUD (tur; üst aynı türde, döngü yok) | 409: alt kategori, model, envanter |
 | Marka | `/markalar` | CRUD (tur) | 409: model, envanter |
-| Model | `/modeller` | CRUD (tur) | 409: envanter |
+| Model | `/modeller` | CRUD (tur; yeni modelde marka zorunlu) | 409: envanter |
 | Firma | `/firmalar` | CRUD (tur) | 409: ihale |
 | İhale | `/ihaleler` | CRUD (yalnızca demirbaş firması) | 409: envanter |
-| Demirbaş | `/demirbaslar` | CRUD; `GET /demirbaslar?zimmetliSicil=…` o sicile şu an zimmetli olanlar (demirbaş no ve seri no aktif demirbaşlarda tekil: 409; model yalnızca kendi markasıyla, marka boşsa modelden) | barkod, not, aparat, fotoğraf birlikte silinir |
-| Sarf malzemesi | `/sarf-malzemeleri` | CRUD | barkod, not, aparat, fotoğraf birlikte silinir |
+| Demirbaş | `/demirbaslar` | CRUD; `GET /demirbaslar?zimmetliSicil=…` o sicile şu an zimmetli olanlar (demirbaş no ve seri no aktif demirbaşlarda tekil: 409; yeni kayıtta kategori, marka ve model zorunlu; model yalnızca kendi markasıyla) | barkod, not, aparat, fotoğraf birlikte silinir |
+| Sarf malzemesi | `/sarf-malzemeleri` | CRUD (yeni kayıtta kategori, marka ve model zorunlu; model yalnızca kendi markasıyla) | barkod, not, aparat, fotoğraf birlikte silinir |
 | Barkod / not / aparat | `/envanterler/{envanterId}/barkodlar` · `/notlar` · `/aparatlar` | CRUD | — |
 | Arıza | `/arizalar` | CRUD | işlemler birlikte silinir |
 | Arıza işlemi | `/arizalar/{arizaId}/islemler` | CRUD | — |

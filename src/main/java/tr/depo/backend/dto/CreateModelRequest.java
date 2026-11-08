@@ -8,7 +8,8 @@ import tr.depo.domain.tanim.MalzemeTuru;
 
 /**
  * Yeni model. Sınırlar MODEL tablosuyla aynıdır. Marka ve kategori modelle aynı türde olmalı.
- * SARF modelinde {@code markaId} zorunludur; {@code aktif} boş bırakılırsa {@code true} olur (CK_MODEL_SARF).
+ * {@code markaId} her iki türde zorunludur (iş kuralı; domain demirbaş modelinde boş bırakmaya izin verir, legacy
+ * kayıtlar için). SARF modelinde {@code aktif} boş bırakılırsa {@code true} olur (CK_MODEL_SARF).
  *
  * @param kategoriId katalog kategorisi (isteğe bağlı)
  */
@@ -16,6 +17,7 @@ public record CreateModelRequest(
     @NotNull(message = "{dogrulama.zorunlu}")
     MalzemeTuru tur,
 
+    @NotNull(message = "{dogrulama.zorunlu}")
     Long markaId,
 
     Long kategoriId,

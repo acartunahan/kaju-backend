@@ -47,7 +47,7 @@ public class ModelController {
     }
 
     @PostMapping
-    @Operation(summary = "Model oluşturur", description = "SARF modelinde markaId zorunlu (eksikse 422); aktif boşsa true.")
+    @Operation(summary = "Model oluşturur", description = "markaId zorunlu (eksikse 400); SARF modelinde aktif boşsa true.")
     public ResponseEntity<ModelResponse> olustur(@Valid @RequestBody CreateModelRequest istek) {
         ModelResponse olusan = modelService.olustur(istek);
         return ResponseEntity.created(KaynakKonumu.yeniKayit(olusan.id())).body(olusan);

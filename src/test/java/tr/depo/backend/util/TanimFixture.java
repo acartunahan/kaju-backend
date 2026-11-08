@@ -30,8 +30,9 @@ public final class TanimFixture {
         return IstekGovdesi.yeni("tur", "SARF", "ad", ad);
     }
 
-    public static IstekGovdesi demirbasModeli(String ad) {
-        return IstekGovdesi.yeni("tur", "DEMIRBAS", "ad", ad, "durumKodu", "1", "kayitTarihi", TARIH);
+    /** Marka her iki türde zorunlu. */
+    public static IstekGovdesi demirbasModeli(String ad, long markaId) {
+        return IstekGovdesi.yeni("tur", "DEMIRBAS", "ad", ad, "markaId", markaId, "durumKodu", "1", "kayitTarihi", TARIH);
     }
 
     public static IstekGovdesi sarfModeli(String ad, long markaId) {
