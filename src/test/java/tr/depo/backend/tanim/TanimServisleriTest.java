@@ -198,13 +198,17 @@ class TanimServisleriTest {
         }
 
         @Test
-        void shouldRequireBrandAndActiveFlagForSarfModel() {
+        void shouldRequireBrandAndDefaultActiveFlagToTrueForNewSarfModel() {
             assertThatThrownBy(() -> servis().olustur(
                     new CreateModelRequest(MalzemeTuru.SARF, null, null, "Toner 85A", null, null, null, true, null)))
                 .isInstanceOf(IsKuraliException.class);
-            assertThatThrownBy(() -> servis().olustur(
-                    new CreateModelRequest(MalzemeTuru.SARF, 3L, null, "Toner 85A", null, null, null, null, null)))
-                .isInstanceOf(IsKuraliException.class);
+
+            when(referansYukleyici.aktifVeAyniTurde(eq(Marka.class), eq(3L), eq("markaId"), eq(MalzemeTuru.SARF), any()))
+                .thenReturn(new Marka(MalzemeTuru.SARF, "HP"));
+            when(repository.save(any(Model.class))).thenAnswer(cagri -> cagri.getArgument(0));
+            assertThat(servis().olustur(
+                    new CreateModelRequest(MalzemeTuru.SARF, 3L, null, "Toner 85A", null, null, null, null, null))
+                .aktif()).isTrue();
         }
 
         @Test

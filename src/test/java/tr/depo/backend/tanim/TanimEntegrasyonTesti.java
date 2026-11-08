@@ -157,7 +157,14 @@ class TanimEntegrasyonTesti extends OracleEntegrasyonTestTabani {
 
         assertThat(modeller.post(TanimFixture.sarfModeli("Toner", demirbasMarka)))
             .hasStatus(422).bodyJson().extractingPath("$.alan").isEqualTo("markaId");
-        assertThat(modeller.post(TanimFixture.sarfModeli("Toner", sarfMarka).olmadan("markaId"))).hasStatus(422);
+        assertThat(modeller.post(TanimFixture.sarfModeli("Toner", sarfMarka).olmadan("markaId")))
+            .hasStatus(422).bodyJson().extractingPath("$.detail").isEqualTo("Sarf modelinde “markaId” zorunludur.");
+
+        long aktifsiz = modeller.olustur(TanimFixture.sarfModeli("Toner 85A", sarfMarka).olmadan("aktif"));
+        assertThat(modeller.get(aktifsiz)).as("aktif boşsa true").hasStatusOk().bodyJson()
+            .extractingPath("$.aktif").isEqualTo(true);
+        assertThat(modeller.put(aktifsiz, TanimFixture.sarfModeli("Toner 85A", sarfMarka).olmadan("aktif").guncelleme(0)))
+            .as("PUT'ta aktif boşaltılamaz").hasStatus(422);
 
         long id = modeller.olustur(TanimFixture.sarfModeli("Toner 725", sarfMarka));
         assertThat(modeller.get(id)).hasStatusOk().bodyJson().extractingPath("$.marka.ad").isEqualTo("Canon");

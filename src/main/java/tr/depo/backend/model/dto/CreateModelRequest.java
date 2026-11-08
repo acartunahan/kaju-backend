@@ -8,7 +8,7 @@ import tr.depo.domain.tanim.MalzemeTuru;
 
 /**
  * Yeni model. Sınırlar MODEL tablosuyla aynıdır. Marka ve kategori modelle aynı türde olmalı.
- * SARF modelinde {@code markaId} ve {@code aktif} zorunludur (domain kuralı, CK_MODEL_SARF).
+ * SARF modelinde {@code markaId} zorunludur; {@code aktif} boş bırakılırsa {@code true} olur (CK_MODEL_SARF).
  *
  * @param kategoriId katalog kategorisi (isteğe bağlı)
  */

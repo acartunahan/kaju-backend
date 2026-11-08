@@ -25,6 +25,7 @@ public interface ModelMapper {
     @Mapping(target = "marka", ignore = true)
     @Mapping(target = "kategori", ignore = true)
     @Mapping(target = "depo", ignore = true)
+    @Mapping(target = "aktif", conditionExpression = "java(istek.aktif() != null)")
     Model yeni(CreateModelRequest istek, @Context Marka marka);
 
     @Mapping(target = "marka", ignore = true)
@@ -32,10 +33,11 @@ public interface ModelMapper {
     @Mapping(target = "depo", ignore = true)
     void guncelle(UpdateModelRequest istek, @MappingTarget Model model);
 
+    /** Sarf modelinde {@code aktif} boş bırakılırsa {@code true} (Marka ile aynı davranış). */
     @ObjectFactory
     default Model yeniModel(CreateModelRequest istek, @Context Marka marka) {
         return istek.tur() == MalzemeTuru.SARF
-            ? Model.sarfModeli(marka, istek.ad(), istek.aktif())
+            ? Model.sarfModeli(marka, istek.ad(), istek.aktif() == null || istek.aktif())
             : Model.demirbasModeli(istek.ad());
     }
 }
