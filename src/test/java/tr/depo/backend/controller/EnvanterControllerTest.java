@@ -124,16 +124,17 @@ class EnvanterControllerTest {
     void shouldBindAllDemirbasFiltersFromQueryParameters() {
         assertThat(mvc.get().uri("/api/v1/demirbaslar").param("kategoriId", "3").param("altKategoriler", "false")
             .param("markaId", "4").param("modelId", "5").param("depoId", "6").param("ihaleId", "7")
-            .param("durum", "NORMAL").param("zimmetliSicil", "0012345").param("q", "laptop")).hasStatusOk();
+            .param("durum", "NORMAL").param("zimmetliSicil", "0012345").param("zimmetli", "true").param("q", "laptop"))
+            .hasStatusOk();
 
         ArgumentCaptor<DemirbasFiltreRequest> filtre = ArgumentCaptor.forClass(DemirbasFiltreRequest.class);
         verify(demirbasService).listele(filtre.capture(), any(Pageable.class));
         assertThat(filtre.getValue()).isEqualTo(new DemirbasFiltreRequest(3L, false, 4L, 5L, 6L, 7L,
-            DemirbasDurumu.NORMAL, "0012345", "laptop"));
+            DemirbasDurumu.NORMAL, "0012345", true, "laptop"));
 
         assertThat(mvc.get().uri("/api/v1/demirbaslar")).hasStatusOk();
-        verify(demirbasService).listele(eq(new DemirbasFiltreRequest(null, null, null, null, null, null, null, null, null)),
-            any(Pageable.class));
+        verify(demirbasService).listele(
+            eq(new DemirbasFiltreRequest(null, null, null, null, null, null, null, null, null, null)), any(Pageable.class));
         assertThat(mvc.get().uri("/api/v1/demirbaslar").param("durum", "KAYIP")).as("bilinmeyen durum").hasStatus(400);
         verifyNoMoreInteractions(demirbasService);
     }

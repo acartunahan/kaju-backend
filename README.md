@@ -120,7 +120,7 @@ listede görünmez. Metin aramaları büyük/küçük harf duyarsız "içerir"di
 
 | Uç | Filtreler / açıklama |
 |---|---|
-| `GET /demirbaslar` | `kategoriId` (alt kategoriler dahil; `altKategoriler=false` ile yalnızca o kategori), `markaId`, `modelId`, `depoId`, `ihaleId`, `durum`, `zimmetliSicil` (tam eşleşme), `q` (ad, seri no, demirbaş no, açıklama, barkod) |
+| `GET /demirbaslar` | `kategoriId` (alt kategoriler dahil; `altKategoriler=false` ile yalnızca o kategori), `markaId`, `modelId`, `depoId`, `ihaleId`, `durum`, `zimmetliSicil` (tam eşleşme), `zimmetli` (true: birine zimmetli, false: kimseye zimmetli olmayan), `q` (ad, seri no, demirbaş no, açıklama, barkod) |
 | `GET /sarf-malzemeleri` | `kategoriId`, `altKategoriler`, `markaId`, `modelId`, `depoId`, `q` (ad, açıklama, barkod) |
 | `GET /demirbaslar/bul` | `barkod`, `seriNo` ya da `demirbasNo` (tam biri; tam eşleşme). Legacy tekrarları için liste döner (en fazla 100) |
 | `GET /modeller` | `tur`, `markaId`, `kategoriId`, `ad`, `aktif` |

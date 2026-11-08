@@ -22,6 +22,7 @@ public record EnvanterAramaKriteri(
     Long ihaleId,
     DemirbasDurumu durum,
     Sicil zimmetliSicil,
+    Boolean zimmetli,
     String q,
     String barkod,
     String seriNo,
@@ -34,18 +35,19 @@ public record EnvanterAramaKriteri(
 
     public static EnvanterAramaKriteri demirbas(DemirbasFiltreRequest f, Sicil zimmetliSicil) {
         return new EnvanterAramaKriteri(MalzemeTuru.DEMIRBAS, f.kategoriId(), !Boolean.FALSE.equals(f.altKategoriler()),
-            f.markaId(), f.modelId(), f.depoId(), f.ihaleId(), f.durum(), zimmetliSicil, bosIse(f.q()), null, null, null);
+            f.markaId(), f.modelId(), f.depoId(), f.ihaleId(), f.durum(), zimmetliSicil, f.zimmetli(), bosIse(f.q()),
+            null, null, null);
     }
 
     public static EnvanterAramaKriteri sarf(SarfMalzemesiFiltreRequest f) {
         return new EnvanterAramaKriteri(MalzemeTuru.SARF, f.kategoriId(), !Boolean.FALSE.equals(f.altKategoriler()),
-            f.markaId(), f.modelId(), f.depoId(), null, null, null, bosIse(f.q()), null, null, null);
+            f.markaId(), f.modelId(), f.depoId(), null, null, null, null, bosIse(f.q()), null, null, null);
     }
 
     /** Barkod, seri no ya da demirbaş no ile tam eşleşme (yalnızca biri). */
     public static EnvanterAramaKriteri demirbasBul(String barkod, String seriNo, Long demirbasNo) {
         return new EnvanterAramaKriteri(MalzemeTuru.DEMIRBAS, null, false, null, null, null, null, null, null, null,
-            bosIse(barkod), bosIse(seriNo), demirbasNo);
+            null, bosIse(barkod), bosIse(seriNo), demirbasNo);
     }
 
     private static String bosIse(String deger) {

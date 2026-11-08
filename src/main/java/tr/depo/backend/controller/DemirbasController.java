@@ -56,8 +56,8 @@ public class DemirbasController {
     @Operation(summary = "Demirbaşları listeler",
         description = "Sayfalı; sıralama alanları: id, demirbasNo, seriNo, ad, kayitTarihi, olusturmaZamani. Filtreler "
             + "birlikte uygulanır: kategoriId (alt kategoriler dahil; altKategoriler=false ile yalnızca o kategori), "
-            + "markaId, modelId, depoId, ihaleId, durum, zimmetliSicil (tam eşleşme; boşsa 400), q (ad, seri no, "
-            + "demirbaş no, açıklama, barkod).")
+            + "markaId, modelId, depoId, ihaleId, durum, zimmetliSicil (tam eşleşme; boşsa 400), zimmetli (true: birine "
+            + "zimmetli, false: kimseye zimmetli olmayan), q (ad, seri no, demirbaş no, açıklama, barkod).")
     public SayfaResponse<DemirbasResponse> listele(@Valid @ParameterObject DemirbasFiltreRequest filtre,
                                                    @ParameterObject Pageable sayfa) {
         return demirbasService.listele(filtre, sayfa);

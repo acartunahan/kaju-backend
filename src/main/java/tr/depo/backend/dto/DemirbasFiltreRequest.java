@@ -10,6 +10,7 @@ import tr.depo.domain.envanter.DemirbasDurumu;
  * @param kategoriId     o kategorideki demirbaşlar
  * @param altKategoriler kategorinin alt kategorilerindekiler de dahil mi (varsayılan: evet)
  * @param zimmetliSicil  o sicile şu an zimmetli olanlar (tam eşleşme; boş verilirse 400)
+ * @param zimmetli       true: birine zimmetli olanlar; false: kimseye zimmetli olmayanlar
  * @param q              ad, seri no, demirbaş no, açıklama ve barkodda arama (büyük/küçük harf duyarsız)
  */
 public record DemirbasFiltreRequest(
@@ -21,6 +22,7 @@ public record DemirbasFiltreRequest(
     Long ihaleId,
     DemirbasDurumu durum,
     String zimmetliSicil,
+    Boolean zimmetli,
     @Size(max = 100, message = "{dogrulama.en-fazla}") String q
 ) {
 }

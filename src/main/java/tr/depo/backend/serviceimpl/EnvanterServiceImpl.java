@@ -113,6 +113,10 @@ public class EnvanterServiceImpl implements EnvanterService {
             esitse(kosullar, cb, kok.get("durum"), k.durum());
             esitse(kosullar, cb, kok.get("zimmetliSicil").get("deger"),
                 k.zimmetliSicil() == null ? null : k.zimmetliSicil().deger());
+            if (k.zimmetli() != null) {
+                Path<String> sicil = kok.get("zimmetliSicil").get("deger");
+                kosullar.add(k.zimmetli() ? cb.isNotNull(sicil) : cb.isNull(sicil));
+            }
             esitse(kosullar, cb, kok.get("seriNo"), k.seriNo());
             esitse(kosullar, cb, kok.get("demirbasNo"), k.demirbasNo());
             if (k.barkod() != null) {

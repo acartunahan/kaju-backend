@@ -95,6 +95,20 @@ class ListelemeEntegrasyonTesti extends OracleEntegrasyonTestTabani {
     }
 
     @Test
+    void shouldListAssignedAndUnassignedDemirbaslar() {
+        TanimSeti tanim = veri.demirbasTanimlari("Z" + ek);
+        long zimmetli = demirbaslar.olustur(EnvanterFixture.demirbas(tanim).ile("zimmetliSicil", "5500001"));
+        long bosta = demirbaslar.olustur(EnvanterFixture.demirbas(tanim).olmadan("zimmetliSicil"));
+        String marka = "" + tanim.markaId();
+
+        assertThat(idler("/api/v1/demirbaslar", Map.of("markaId", marka, "zimmetli", "true"))).containsExactly((int) zimmetli);
+        assertThat(idler("/api/v1/demirbaslar", Map.of("markaId", marka, "zimmetli", "false"))).containsExactly((int) bosta);
+        assertThat(idler("/api/v1/demirbaslar", Map.of("markaId", marka))).as("filtre yoksa hepsi")
+            .containsExactlyInAnyOrder((int) zimmetli, (int) bosta);
+        assertThat(mvc.get().uri("/api/v1/demirbaslar").param("zimmetli", "belki")).hasStatus(400);
+    }
+
+    @Test
     void shouldFilterSarfMalzemeleriByDefinitionsAndSearchText() {
         TanimSeti tanim = veri.sarfTanimlari("S" + ek);
         long toner = sarflar.olustur(EnvanterFixture.sarf("Toner 85A " + ek, tanim));
