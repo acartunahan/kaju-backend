@@ -13,6 +13,6 @@ import org.mapstruct.ReportingPolicy;
     componentModel = MappingConstants.ComponentModel.SPRING,
     injectionStrategy = InjectionStrategy.CONSTRUCTOR,
     unmappedTargetPolicy = ReportingPolicy.ERROR,
-    uses = IliskiOzetiEsleyici.class)
+    uses = {IliskiOzetiEsleyici.class, DegerNesnesiEsleyici.class})
 public interface MapperYapilandirmasi {
 }

@@ -1,21 +1,27 @@
 package tr.depo.backend.support.fixture;
 
 import jakarta.persistence.EntityManager;
+import java.time.LocalDateTime;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
+import tr.depo.domain.envanter.DemirbasDurumu;
+import tr.depo.domain.envanter.Envanter;
 import tr.depo.domain.ortak.BaseEntity;
 import tr.depo.domain.tanim.Depo;
 import tr.depo.domain.tanim.Marka;
+import tr.depo.domain.tanim.MalzemeTuru;
 import tr.depo.domain.tanim.Model;
 
 /**
- * Entegrasyon testlerinde API'si henüz olmayan ilişkili kayıtları (depo, model…) doğrudan JPA ile hazırlar.
- * Her işlem kendi transaction'ında çalışır ve commit edilir.
+ * Entegrasyon testlerinde API'si henüz olmayan ilişkili kayıtları (depo, model, envanter…) doğrudan JPA ile
+ * hazırlar. Her işlem kendi transaction'ında çalışır ve commit edilir.
  */
 public final class VeritabaniFixture {
 
     private static final String TEST_SILEN = "TEST";
+    private static final LocalDateTime KAYIT_TARIHI = LocalDateTime.of(2026, 1, 1, 0, 0);
 
     private final EntityManager entityManager;
     private final TransactionTemplate islem;
@@ -29,6 +35,10 @@ public final class VeritabaniFixture {
         return kaydet(new Depo(ad));
     }
 
+    public long marka(MalzemeTuru tur, String ad) {
+        return kaydet(new Marka(tur, ad));
+    }
+
     public long sarfModeli(long markaId, String ad) {
         return islem.execute(durum -> {
             Model model = Model.sarfModeli(entityManager.find(Marka.class, markaId), ad, true);
@@ -38,12 +48,35 @@ public final class VeritabaniFixture {
         });
     }
 
+    /** Demirbaş envanter; {@code ayar} ile ilişkiler bağlanır (ör. {@code e -> e.setDepo(bul(Depo.class, id))}). */
+    public long demirbasEnvanter(Consumer<Envanter> ayar) {
+        return envanter(Envanter.demirbas(DemirbasDurumu.NORMAL, KAYIT_TARIHI), ayar);
+    }
+
+    public long sarfEnvanter(String ad, Consumer<Envanter> ayar) {
+        return envanter(Envanter.sarf(ad), ayar);
+    }
+
+    /** {@link #demirbasEnvanter} / {@link #sarfEnvanter} ayarlarında ilişkili kaydı yüklemek için. */
+    public <T extends BaseEntity> T bul(Class<T> tip, long id) {
+        return entityManager.find(tip, id);
+    }
+
     public <T extends BaseEntity> void sil(Class<T> tip, long id) {
         islem.executeWithoutResult(durum -> entityManager.find(tip, id).sil(TEST_SILEN));
     }
 
     public <T extends BaseEntity, R> R oku(Class<T> tip, long id, Function<T, R> okuyucu) {
         return islem.execute(durum -> okuyucu.apply(entityManager.find(tip, id)));
+    }
+
+    private long envanter(Envanter envanter, Consumer<Envanter> ayar) {
+        return islem.execute(durum -> {
+            ayar.accept(envanter);
+            entityManager.persist(envanter);
+            entityManager.flush();
+            return envanter.getId();
+        });
     }
 
     private long kaydet(BaseEntity kayit) {

@@ -3,7 +3,6 @@ package tr.depo.backend.support.fixture;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 import tr.depo.backend.marka.dto.CreateMarkaRequest;
 import tr.depo.backend.marka.dto.UpdateMarkaRequest;
 import tr.depo.domain.tanim.MalzemeTuru;
@@ -103,13 +102,6 @@ public final class MarkaFixture {
     }
 
     private static String jsonYaz(Map<String, Object> alanlar) {
-        return alanlar.entrySet().stream()
-            .filter(alan -> alan.getValue() != null)
-            .map(alan -> "\"" + alan.getKey() + "\":" + jsonDegeri(alan.getValue()))
-            .collect(Collectors.joining(",", "{", "}"));
-    }
-
-    private static String jsonDegeri(Object deger) {
-        return deger instanceof Number || deger instanceof Boolean ? deger.toString() : "\"" + deger + "\"";
+        return IstekGovdesi.yaz(alanlar);
     }
 }

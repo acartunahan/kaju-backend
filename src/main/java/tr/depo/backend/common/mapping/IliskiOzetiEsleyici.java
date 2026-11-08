@@ -3,6 +3,10 @@ package tr.depo.backend.common.mapping;
 import org.springframework.stereotype.Component;
 import tr.depo.domain.ortak.BaseEntity;
 import tr.depo.domain.tanim.Depo;
+import tr.depo.domain.tanim.Firma;
+import tr.depo.domain.tanim.Kategori;
+import tr.depo.domain.tanim.Marka;
+import tr.depo.domain.tanim.Model;
 
 /**
  * Entity → {@link IliskiOzeti} dönüşümleri; MapStruct bunları türe göre otomatik kullanır. Silinmiş ilişki
@@ -13,6 +17,23 @@ public class IliskiOzetiEsleyici {
 
     public IliskiOzeti depo(Depo depo) {
         return aktifMi(depo) ? new IliskiOzeti(depo.getId(), depo.getAd()) : null;
+    }
+
+    public IliskiOzeti kategori(Kategori kategori) {
+        return aktifMi(kategori) ? new IliskiOzeti(kategori.getId(), kategori.getAd()) : null;
+    }
+
+    public IliskiOzeti marka(Marka marka) {
+        return aktifMi(marka) ? new IliskiOzeti(marka.getId(), marka.getAd()) : null;
+    }
+
+    public IliskiOzeti model(Model model) {
+        return aktifMi(model) ? new IliskiOzeti(model.getId(), model.getAd()) : null;
+    }
+
+    /** Legacy demirbaş firmalarında ad boş olabilir; özet yine döner (id ile). */
+    public IliskiOzeti firma(Firma firma) {
+        return aktifMi(firma) ? new IliskiOzeti(firma.getId(), firma.getAd()) : null;
     }
 
     private static boolean aktifMi(BaseEntity kayit) {
