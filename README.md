@@ -89,6 +89,32 @@ mvn -B verify    # + *EntegrasyonTesti: Testcontainers ile gerçek Oracle (Docke
 | 422 | `REFERANS_GECERSIZ`, `IS_KURALI_IHLALI`, `VERI_KURALI_IHLALI` |
 | 500 | `BEKLENMEYEN_HATA` (ayrıntı sadece logda) |
 
+## Kaynaklar
+
+Tümü `/api/v1` altında. "Silinince 409" = başka aktif kayıtlar kullanıyorsa silme engellenir; "birlikte silinir" =
+aggregate'in alt kayıtları aynı transaction'da soft delete edilir.
+
+| Kaynak | Yol | İşlemler | Silme |
+|---|---|---|---|
+| Depo | `/depolar` | CRUD | 409: depoya bağlı aktif kayıt |
+| Kategori | `/kategoriler` | CRUD (tur; üst aynı türde, döngü yok) | 409: alt kategori, model, envanter |
+| Marka | `/markalar` | CRUD (tur) | 409: model, envanter |
+| Model | `/modeller` | CRUD (tur) | 409: envanter |
+| Firma | `/firmalar` | CRUD (tur) | 409: ihale |
+| İhale | `/ihaleler` | CRUD (yalnızca demirbaş firması) | 409: envanter |
+| Demirbaş | `/demirbaslar` | CRUD | barkod, not, aparat, fotoğraf birlikte silinir |
+| Sarf malzemesi | `/sarf-malzemeleri` | CRUD | barkod, not, aparat, fotoğraf birlikte silinir |
+| Barkod / not / aparat | `/envanterler/{envanterId}/barkodlar` · `/notlar` · `/aparatlar` | CRUD | — |
+| Arıza | `/arizalar` | CRUD | işlemler birlikte silinir |
+| Arıza işlemi | `/arizalar/{arizaId}/islemler` | CRUD | — |
+| Sayım | `/sayimlar` | CRUD | satırlar birlikte silinir |
+| Sayım satırı | `/sayimlar/{sayimId}/satirlar` | CRUD (tur: YEREL/GENEL) | — |
+| Envanter hareketi | `/envanter-hareketleri` | Yalnızca GET, POST (geçmiş kaydı) | Yok (405) |
+| Zimmet kaydı | `/zimmet-kayitlari` | Yalnızca GET, POST (geçmiş kaydı) | Yok (405) |
+
+Bilerek açılmayanlar: `COKLU_ZIMMET` ve `SQL_KAYDI` (anlamları doğrulanmadı), envanter fotoğrafı (dosya deposu
+bağlantısı sonra).
+
 ## Yapı
 
 Package-by-feature: her kaynak kendi paketinde (`controller`, `XService` + `XServiceImpl`, `XRepository`,
@@ -99,8 +125,9 @@ Package-by-feature: her kaynak kendi paketinde (`controller`, `XService` + `XSer
 | `common.config` | JPA (entity taraması, UTC audit zamanı), geçici `AuditorAware`, OpenAPI |
 | `common.exception` | `KajuException` hiyerarşisi, `HataKodu`, `GlobalExceptionHandler`, `OracleHataCevirici` |
 | `common.paging` | `SayfaCevabi`, `SiralamaDogrulayici` |
-| `common.persistence` | `AktifKayitRepository` (delete* yok), `ReferansYukleyici` |
-| `common.service` | `SoftDeleteServisSablonu` (silme akışı), `SilmeAltyapisi`, `KullanimReferansi` |
+| `common.persistence` | `AktifKayitRepository` (delete* yok), `AktifKayitlar` (silinmemiş kayıt ya da 404), `ReferansYukleyici` |
+| `common.service` | `SoftDeleteServisSablonu` (silme akışı), `AltKayitServisSablonu` (alt kaynaklar), `SilmeAltyapisi`, `KullanimReferansi` |
+| `common.mapping` | MapStruct ortak ayarı, ilişki özetleri (`IliskiOzeti`), değer nesnesi eşlemeleri |
 | `common.web` | `ApiYollari`, `KaynakKonumu` |
 
 Mimari kurallar `MimariKurallarTest` (ArchUnit) ile build'de zorlanır: repository'ler `delete*` açan

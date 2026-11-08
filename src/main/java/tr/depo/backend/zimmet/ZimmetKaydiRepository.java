@@ -1,0 +1,14 @@
+package tr.depo.backend.zimmet;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
+import tr.depo.backend.common.persistence.AktifKayitRepository;
+import tr.depo.domain.envanter.ZimmetKaydi;
+
+public interface ZimmetKaydiRepository extends AktifKayitRepository<ZimmetKaydi> {
+
+    @Override
+    @EntityGraph(attributePaths = "depo")
+    Page<ZimmetKaydi> findAll(Pageable sayfa);
+}

@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import tr.depo.backend.common.exception.KayitBulunamadiException;
 import tr.depo.backend.common.exception.KayitKullanimdaException;
 import tr.depo.backend.common.exception.SurumCakismasiException;
+import tr.depo.backend.common.persistence.AktifKayitlar;
 import tr.depo.backend.common.persistence.AktifKayitRepository;
 import tr.depo.domain.ortak.BaseEntity;
 
@@ -55,9 +56,7 @@ public abstract class SoftDeleteServisSablonu<T extends BaseEntity> {
      * türü de kontrol etmek için override eder; {@link #sil} de bu metodu kullanır.
      */
     protected T aktifBul(Long id) {
-        return repository.findById(id)
-            .filter(kayit -> !kayit.isSilindi())
-            .orElseThrow(() -> new KayitBulunamadiException(kaynakAdi, id));
+        return AktifKayitlar.bul(repository, id, kaynakAdi);
     }
 
     /** PUT'ta istemcinin gönderdiği sürüm kaydın güncel sürümü değilse 409. */

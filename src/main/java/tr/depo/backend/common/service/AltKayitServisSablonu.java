@@ -3,6 +3,7 @@ package tr.depo.backend.common.service;
 import java.util.Objects;
 import org.springframework.transaction.annotation.Transactional;
 import tr.depo.backend.common.exception.KayitBulunamadiException;
+import tr.depo.backend.common.persistence.AktifKayitlar;
 import tr.depo.backend.common.persistence.AktifKayitRepository;
 import tr.depo.domain.ortak.BaseEntity;
 
@@ -38,9 +39,7 @@ public abstract class AltKayitServisSablonu<T extends BaseEntity, U extends Base
 
     /** @throws KayitBulunamadiException üst kayıt yoksa ya da silinmişse (404) */
     protected U aktifUst(Long ustId) {
-        return ustRepository.findById(ustId)
-            .filter(ust -> !ust.isSilindi())
-            .orElseThrow(() -> new KayitBulunamadiException(ustKaynakAdi, ustId));
+        return AktifKayitlar.bul(ustRepository, ustId, ustKaynakAdi);
     }
 
     /** @throws KayitBulunamadiException üst ya da alt kayıt yoksa, silinmişse ya da alt kayıt başka üst kaydınsa */
