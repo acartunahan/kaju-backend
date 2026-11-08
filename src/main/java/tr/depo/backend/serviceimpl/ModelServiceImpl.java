@@ -33,6 +33,7 @@ public class ModelServiceImpl extends AbstractSoftDeleteServiceImpl<Model> imple
     static final String KATEGORI_ALANI = "kategoriId";
     static final String DEPO_ALANI = "depoId";
     static final String SARF_ZORUNLU = "model.sarf-zorunlu";
+    static final String MARKA_BOSALTILAMAZ = "model.marka-bosaltilamaz";
     static final Set<String> SIRALAMA_ALANLARI = Set.of("id", "tur", "ad", "kayitTarihi", "olusturmaZamani");
 
     private static final List<KullanimReferansi> KULLANIM_REFERANSLARI = List.of(
@@ -80,6 +81,7 @@ public class ModelServiceImpl extends AbstractSoftDeleteServiceImpl<Model> imple
         Model model = aktifBul(id);
         surumuDogrula(model, istek.versiyon());
         sarfZorunluAlanlari(model.getTur(), istek.markaId(), istek.aktif());
+        markaBosaltilmamali(model, istek.markaId());
         Marka marka = marka(istek.markaId(), model.getTur());
         Kategori kategori = kategori(istek.kategoriId(), model.getTur());
         mapper.guncelle(istek, model);
@@ -101,6 +103,17 @@ public class ModelServiceImpl extends AbstractSoftDeleteServiceImpl<Model> imple
 
     private Kategori kategori(Long kategoriId, MalzemeTuru tur) {
         return referansService.aktifVeAyniTurde(Kategori.class, kategoriId, KATEGORI_ALANI, tur, Kategori::getTur);
+    }
+
+    /**
+     * İş kuralı: yeni modelde marka zorunlu (istek doğrulaması); güncellemede dolu (silinmemiş) marka boşaltılamaz
+     * (422). Legacy'den markasız gelen demirbaş modeli markasız kalabilir ve yine güncellenebilir.
+     */
+    private static void markaBosaltilmamali(Model model, Long markaId) {
+        Marka mevcut = model.getMarka();
+        if (markaId == null && mevcut != null && !mevcut.isSilindi()) {
+            throw new IsKuraliException(MARKA_BOSALTILAMAZ, "Modelin markası boşaltılamaz");
+        }
     }
 
     /** Domain kuralı (CK_MODEL_SARF): PUT tam güncellemedir; sarf modelinde marka ve aktif boşaltılamaz (422). */

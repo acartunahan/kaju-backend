@@ -115,6 +115,31 @@ class EnvanterEntegrasyonTesti extends OracleEntegrasyonTestTabani {
     }
 
     @Test
+    void shouldNotClearFilledDefinitionsOnUpdateButKeepLegacyEmptyOnesEditable() {
+        long id = demirbaslar.olustur(EnvanterFixture.demirbas(demirbasTanimlari));
+
+        assertThat(demirbaslar.put(id, EnvanterFixture.demirbas(demirbasTanimlari).olmadan("kategoriId").guncelleme(0)))
+            .hasStatus(422).bodyJson().extractingPath("$.detail")
+            .isEqualTo("'kategoriId' boşaltılamaz: kayıtta dolu olan kategori, marka ve model güncellemede de gönderilmelidir.");
+        assertThat(demirbaslar.get(id)).as("geri alındı").hasStatusOk().bodyJson()
+            .hasPathSatisfying("$.kategori.id", k -> assertThat(k).asNumber().isEqualTo((int) demirbasTanimlari.kategoriId()))
+            .hasPathSatisfying("$.versiyon", v -> assertThat(v).asNumber().isEqualTo(0));
+
+        assertThat(demirbaslar.put(id, EnvanterFixture.demirbas(demirbasTanimlari).olmadan("markaId").guncelleme(0)))
+            .as("marka boş ama modelden dolduruluyor: boşaltma sayılmaz").hasStatusOk().bodyJson()
+            .hasPathSatisfying("$.marka.id", m -> assertThat(m).asNumber().isEqualTo((int) demirbasTanimlari.markaId()));
+
+        long sarf = sarflar.olustur(EnvanterFixture.sarf("Toner", sarfTanimlari));
+        assertThat(sarflar.put(sarf, EnvanterFixture.sarf("Toner", sarfTanimlari).olmadan("modelId").guncelleme(0)))
+            .hasStatus(422);
+
+        long legacy = veri.demirbasEnvanter(e -> { });
+        assertThat(demirbaslar.put(legacy, EnvanterFixture.demirbas(demirbasTanimlari)
+                .olmadan("kategoriId").olmadan("markaId").olmadan("modelId").guncelleme(0)))
+            .as("legacy'den boş gelen tanımlar boş kalabilir").hasStatusOk();
+    }
+
+    @Test
     void shouldKeepDemirbasNoAndSerialNoUniqueAmongActiveDemirbaslar() {
         long id = demirbaslar.olustur(EnvanterFixture.demirbas(demirbasTanimlari).ile("demirbasNo", 900_001).ile("seriNo", "SN-T-1"));
 

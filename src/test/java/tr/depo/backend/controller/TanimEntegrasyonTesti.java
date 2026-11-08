@@ -186,6 +186,21 @@ class TanimEntegrasyonTesti extends OracleEntegrasyonTestTabani {
         assertThat(modeller.delete(modelId)).hasStatus(204);
     }
 
+    @Test
+    void shouldNotClearModelBrandOnUpdateButKeepLegacyBrandlessModelEditable() {
+        long markaId = veri.marka(MalzemeTuru.DEMIRBAS, "Asus");
+        long modelId = modeller.olustur(TanimFixture.demirbasModeli("ZenBook", markaId));
+
+        assertThat(modeller.put(modelId, TanimFixture.demirbasModeli("ZenBook 14", markaId).olmadan("markaId").guncelleme(0)))
+            .hasStatus(422).bodyJson().extractingPath("$.detail")
+            .isEqualTo("Modelin markası boşaltılamaz; güncellemede “markaId” gönderilmelidir.");
+        assertThat(modeller.get(modelId)).hasStatusOk().bodyJson().extractingPath("$.ad").isEqualTo("ZenBook");
+
+        long legacy = veri.markasizDemirbasModeli("Eski Model");
+        assertThat(modeller.put(legacy, TanimFixture.demirbasModeli("Eski Model 2", markaId).olmadan("markaId")
+            .guncelleme(0))).as("legacy'den markasız gelen model markasız kalabilir").hasStatusOk();
+    }
+
     // ------------------------------------------------------------------ İhale
 
     @Test

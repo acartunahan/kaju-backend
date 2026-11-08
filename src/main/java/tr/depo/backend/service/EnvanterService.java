@@ -15,6 +15,12 @@ public interface EnvanterService {
      */
     void bagla(Envanter envanter, Long kategoriId, Long markaId, Long modelId, Long depoId, Long ihaleId);
 
+    /**
+     * Güncellemede {@link #bagla}: ek olarak kayıtta dolu olan kategori, marka ya da model boşaltılamaz (422). Legacy'den
+     * boş gelen bir tanım boş kalabilir; kayıt yine güncellenebilir. Yeni kayıtta üçü de istek doğrulamasıyla zorunludur.
+     */
+    void guncellemedeBagla(Envanter envanter, Long kategoriId, Long markaId, Long modelId, Long depoId, Long ihaleId);
+
     /** Garanti bitişi başlangıçtan önce olamaz (422). */
     void garantiSirasiniDogrula(LocalDateTime baslangic, LocalDateTime bitis);
 

@@ -64,7 +64,8 @@ public class SarfMalzemesiServiceImpl extends AbstractSoftDeleteServiceImpl<Enva
         Envanter sarf = aktifBul(id);
         surumuDogrula(sarf, istek.versiyon());
         mapper.guncelle(istek, sarf);
-        envanterService.bagla(sarf, istek.kategoriId(), istek.markaId(), istek.modelId(), istek.depoId(), null);
+        envanterService.guncellemedeBagla(sarf, istek.kategoriId(), istek.markaId(), istek.modelId(), istek.depoId(),
+            null);
         repository.flush();
         return mapper.cevap(sarf);
     }

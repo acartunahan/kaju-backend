@@ -52,6 +52,11 @@ public final class VeritabaniFixture {
         });
     }
 
+    /** Legacy'den markasız gelmiş bir demirbaş modeli (API artık markasız model oluşturmaz). */
+    public long markasizDemirbasModeli(String ad) {
+        return kaydet(Model.demirbasModeli(ad));
+    }
+
     public long sarfModeli(long markaId, String ad) {
         return islem.execute(durum -> {
             Model model = Model.sarfModeli(entityManager.find(Marka.class, markaId), ad, true);

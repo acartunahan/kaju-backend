@@ -32,6 +32,7 @@ public class EnvanterServiceImpl implements EnvanterService {
     static final String KAYNAK = "Envanter";
     static final String GARANTI_SIRASI = "envanter.garanti-sirasi";
     static final String MODEL_MARKA_UYUMSUZ = "envanter.model-marka-uyumsuz";
+    static final String TANIM_BOSALTILAMAZ = "envanter.tanim-bosaltilamaz";
 
     private static final String UST_ALANI = "envanter";
     /** Fotoğrafın API'si henüz yok ama aggregate'e aittir; tabloda kaydı varsa o da silinir. */
@@ -60,6 +61,33 @@ public class EnvanterServiceImpl implements EnvanterService {
         envanter.setModel(model);
         envanter.setDepo(depo);
         envanter.setIhale(ihale);
+    }
+
+    /**
+     * "Dolu" = bağlı ve silinmemiş. Silinmiş bir tanım cevapta zaten boş görünür (ilişki özeti null); istemci onu boş
+     * gönderdiğinde engellenmez. Kontrol bağlamadan sonra yapılır: marka boş gönderilip modelden doldurulursa boşaltma
+     * sayılmaz. İhlalde istisna transaction'ı geri alır; yapılan bağlama kaydedilmez.
+     */
+    @Override
+    public void guncellemedeBagla(Envanter envanter, Long kategoriId, Long markaId, Long modelId, Long depoId,
+                                  Long ihaleId) {
+        boolean kategoriDolu = dolu(envanter.getKategori());
+        boolean markaDolu = dolu(envanter.getMarka());
+        boolean modelDolu = dolu(envanter.getModel());
+        bagla(envanter, kategoriId, markaId, modelId, depoId, ihaleId);
+        bosaltilmamali(kategoriDolu, envanter.getKategori(), "kategoriId");
+        bosaltilmamali(markaDolu, envanter.getMarka(), "markaId");
+        bosaltilmamali(modelDolu, envanter.getModel(), "modelId");
+    }
+
+    private static boolean dolu(BaseEntity tanim) {
+        return tanim != null && !tanim.isSilindi();
+    }
+
+    private static void bosaltilmamali(boolean onceDolu, BaseEntity simdiki, String alan) {
+        if (onceDolu && simdiki == null) {
+            throw new IsKuraliException(TANIM_BOSALTILAMAZ, alan + " boşaltılamaz (kayıtta dolu)", alan);
+        }
     }
 
     /**
