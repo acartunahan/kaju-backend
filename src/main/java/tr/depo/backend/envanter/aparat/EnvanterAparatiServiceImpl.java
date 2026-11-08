@@ -41,14 +41,14 @@ public class EnvanterAparatiServiceImpl extends EnvanterAltKayitServisi<Envanter
     @Override
     public SayfaCevabi<EnvanterAparatiResponse> listele(Long envanterId, Pageable sayfa) {
         SiralamaDogrulayici.dogrula(sayfa, SIRALAMA_ALANLARI);
-        aktifEnvanter(envanterId);
+        aktifUst(envanterId);
         return SayfaCevabi.of(repository.findByEnvanter_Id(envanterId, sayfa).map(mapper::cevap));
     }
 
     @Override
     @Transactional
     public EnvanterAparatiResponse olustur(Long envanterId, CreateEnvanterAparatiRequest istek) {
-        EnvanterAparati kaydedilen = repository.save(mapper.yeni(istek, aktifEnvanter(envanterId)));
+        EnvanterAparati kaydedilen = repository.save(mapper.yeni(istek, aktifUst(envanterId)));
         repository.flush();
         return mapper.cevap(kaydedilen);
     }
@@ -64,7 +64,7 @@ public class EnvanterAparatiServiceImpl extends EnvanterAltKayitServisi<Envanter
     }
 
     @Override
-    protected Envanter envanteri(EnvanterAparati aparat) {
+    protected Envanter ustKaydi(EnvanterAparati aparat) {
         return aparat.getEnvanter();
     }
 }

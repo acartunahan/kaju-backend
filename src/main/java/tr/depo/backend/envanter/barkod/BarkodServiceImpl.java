@@ -40,7 +40,7 @@ public class BarkodServiceImpl extends EnvanterAltKayitServisi<Barkod> implement
     @Override
     public SayfaCevabi<BarkodResponse> listele(Long envanterId, Pageable sayfa) {
         SiralamaDogrulayici.dogrula(sayfa, SIRALAMA_ALANLARI);
-        aktifEnvanter(envanterId);
+        aktifUst(envanterId);
         return SayfaCevabi.of(repository.findByEnvanter_Id(envanterId, sayfa).map(mapper::cevap));
     }
 
@@ -48,7 +48,7 @@ public class BarkodServiceImpl extends EnvanterAltKayitServisi<Barkod> implement
     @Transactional
     public BarkodResponse olustur(Long envanterId, CreateBarkodRequest istek) {
         Barkod barkod = mapper.yeni(istek);
-        barkod.setEnvanter(aktifEnvanter(envanterId));
+        barkod.setEnvanter(aktifUst(envanterId));
         Barkod kaydedilen = repository.save(barkod);
         repository.flush();
         return mapper.cevap(kaydedilen);
@@ -65,7 +65,7 @@ public class BarkodServiceImpl extends EnvanterAltKayitServisi<Barkod> implement
     }
 
     @Override
-    protected Envanter envanteri(Barkod barkod) {
+    protected Envanter ustKaydi(Barkod barkod) {
         return barkod.getEnvanter();
     }
 }

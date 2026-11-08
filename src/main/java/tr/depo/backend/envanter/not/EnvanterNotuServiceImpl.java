@@ -40,7 +40,7 @@ public class EnvanterNotuServiceImpl extends EnvanterAltKayitServisi<EnvanterNot
     @Override
     public SayfaCevabi<EnvanterNotuResponse> listele(Long envanterId, Pageable sayfa) {
         SiralamaDogrulayici.dogrula(sayfa, SIRALAMA_ALANLARI);
-        aktifEnvanter(envanterId);
+        aktifUst(envanterId);
         return SayfaCevabi.of(repository.findByEnvanter_Id(envanterId, sayfa).map(mapper::cevap));
     }
 
@@ -48,7 +48,7 @@ public class EnvanterNotuServiceImpl extends EnvanterAltKayitServisi<EnvanterNot
     @Transactional
     public EnvanterNotuResponse olustur(Long envanterId, CreateEnvanterNotuRequest istek) {
         EnvanterNotu not = mapper.yeni(istek);
-        not.setEnvanter(aktifEnvanter(envanterId));
+        not.setEnvanter(aktifUst(envanterId));
         EnvanterNotu kaydedilen = repository.save(not);
         repository.flush();
         return mapper.cevap(kaydedilen);
@@ -65,7 +65,7 @@ public class EnvanterNotuServiceImpl extends EnvanterAltKayitServisi<EnvanterNot
     }
 
     @Override
-    protected Envanter envanteri(EnvanterNotu not) {
+    protected Envanter ustKaydi(EnvanterNotu not) {
         return not.getEnvanter();
     }
 }

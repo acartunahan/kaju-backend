@@ -1,6 +1,7 @@
 package tr.depo.backend.common.mapping;
 
 import org.springframework.stereotype.Component;
+import tr.depo.domain.envanter.Envanter;
 import tr.depo.domain.ortak.BaseEntity;
 import tr.depo.domain.tanim.Depo;
 import tr.depo.domain.tanim.Firma;
@@ -35,6 +36,11 @@ public class IliskiOzetiEsleyici {
     /** Legacy demirbaş firmalarında ad boş olabilir; özet yine döner (id ile). */
     public IliskiOzeti firma(Firma firma) {
         return aktifMi(firma) ? new IliskiOzeti(firma.getId(), firma.getAd()) : null;
+    }
+
+    /** Demirbaşlarda ad boş olabilir; özet yine döner (id ile). */
+    public IliskiOzeti envanter(Envanter envanter) {
+        return aktifMi(envanter) ? new IliskiOzeti(envanter.getId(), envanter.getAd()) : null;
     }
 
     public IliskiOzeti ihale(Ihale ihale) {
