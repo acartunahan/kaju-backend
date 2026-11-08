@@ -1,6 +1,7 @@
 package tr.depo.backend.support.fixture;
 
 import jakarta.persistence.EntityManager;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -8,6 +9,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import tr.depo.domain.envanter.DemirbasDurumu;
 import tr.depo.domain.envanter.Envanter;
+import tr.depo.domain.envanter.EnvanterHareketi;
 import tr.depo.domain.ortak.BaseEntity;
 import tr.depo.domain.tanim.Depo;
 import tr.depo.domain.tanim.Marka;
@@ -55,6 +57,18 @@ public final class VeritabaniFixture {
 
     public long sarfEnvanter(String ad, Consumer<Envanter> ayar) {
         return envanter(Envanter.sarf(ad), ayar);
+    }
+
+    /** Envantere bağlı bir demirbaş hareketi (geçmiş kaydı); envanter silinince silinmemesi gereken kayıt. */
+    public long demirbasHareketi(long envanterId) {
+        return islem.execute(durum -> {
+            EnvanterHareketi hareket = EnvanterHareketi.demirbasHareketi(BigDecimal.ONE);
+            hareket.setEnvanter(entityManager.find(Envanter.class, envanterId));
+            hareket.setHareketAdi("Transfer");
+            entityManager.persist(hareket);
+            entityManager.flush();
+            return hareket.getId();
+        });
     }
 
     /** {@link #demirbasEnvanter} / {@link #sarfEnvanter} ayarlarında ilişkili kaydı yüklemek için. */

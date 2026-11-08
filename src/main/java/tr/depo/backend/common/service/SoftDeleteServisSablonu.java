@@ -50,7 +50,10 @@ public abstract class SoftDeleteServisSablonu<T extends BaseEntity> {
         log.info("{} silindi (soft delete): id={}", kaynakAdi, id);
     }
 
-    /** Silinmemiş kaydı döndürür; yoksa ya da silinmişse 404. */
+    /**
+     * Silinmemiş kaydı döndürür; yoksa ya da silinmişse 404. Aynı tabloyu paylaşan kaynaklar (ör. demirbaş / sarf)
+     * türü de kontrol etmek için override eder; {@link #sil} de bu metodu kullanır.
+     */
     protected T aktifBul(Long id) {
         return repository.findById(id)
             .filter(kayit -> !kayit.isSilindi())
