@@ -11,8 +11,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
-import tr.depo.backend.support.OracleEntegrasyonTestTabani;
-import tr.depo.backend.support.OracleTestOrtami;
+import tr.depo.backend.util.OracleEntegrasyonTestTabani;
+import tr.depo.backend.util.OracleTestOrtami;
 
 /**
  * Uygulama gerçek Oracle'da ayağa kalkıyor mu: domain jar'ındaki Flyway şeması kuruluyor, Hibernate
