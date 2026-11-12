@@ -33,7 +33,7 @@ public class ModelServiceImpl extends AbstractSoftDeleteServiceImpl<Model> imple
     static final String KATEGORI_ALANI = "kategoriId";
     static final String DEPO_ALANI = "depoId";
     static final String SARF_ZORUNLU = "model.sarf-zorunlu";
-    static final String SARF_MARKA_ZORUNLU = "model.sarf-marka-zorunlu";
+    static final String MARKA_BOSALTILAMAZ = "model.marka-bosaltilamaz";
     static final Set<String> SIRALAMA_ALANLARI = Set.of("id", "tur", "ad", "kayitTarihi", "olusturmaZamani");
 
     private static final List<KullanimReferansi> KULLANIM_REFERANSLARI = List.of(
@@ -65,7 +65,6 @@ public class ModelServiceImpl extends AbstractSoftDeleteServiceImpl<Model> imple
     @Override
     @Transactional
     public ModelResponse olustur(CreateModelRequest istek) {
-        sarfMarkaZorunlu(istek.tur(), istek.markaId());
         Marka marka = marka(istek.markaId(), istek.tur());
         Model model = mapper.yeni(istek, marka);
         model.setMarka(marka);
@@ -82,6 +81,7 @@ public class ModelServiceImpl extends AbstractSoftDeleteServiceImpl<Model> imple
         Model model = aktifBul(id);
         surumuDogrula(model, istek.versiyon());
         sarfZorunluAlanlari(model.getTur(), istek.markaId(), istek.aktif());
+        markaBosaltilmamali(model, istek.markaId());
         Marka marka = marka(istek.markaId(), model.getTur());
         Kategori kategori = kategori(istek.kategoriId(), model.getTur());
         mapper.guncelle(istek, model);
@@ -105,10 +105,14 @@ public class ModelServiceImpl extends AbstractSoftDeleteServiceImpl<Model> imple
         return referansService.aktifVeAyniTurde(Kategori.class, kategoriId, KATEGORI_ALANI, tur, Kategori::getTur);
     }
 
-    /** Yeni sarf modelinde marka zorunlu; aktif boşsa {@code true} olur (mapper, Marka ile aynı davranış). */
-    private static void sarfMarkaZorunlu(MalzemeTuru tur, Long markaId) {
-        if (tur == MalzemeTuru.SARF && markaId == null) {
-            throw new IsKuraliException(SARF_MARKA_ZORUNLU, "Sarf modelinde markaId zorunlu");
+    /**
+     * İş kuralı: yeni modelde marka zorunlu (istek doğrulaması); güncellemede dolu (silinmemiş) marka boşaltılamaz
+     * (422). Legacy'den markasız gelen demirbaş modeli markasız kalabilir ve yine güncellenebilir.
+     */
+    private static void markaBosaltilmamali(Model model, Long markaId) {
+        Marka mevcut = model.getMarka();
+        if (markaId == null && mevcut != null && !mevcut.isSilindi()) {
+            throw new IsKuraliException(MARKA_BOSALTILAMAZ, "Modelin markası boşaltılamaz");
         }
     }
 

@@ -151,14 +151,17 @@ class TanimEntegrasyonTesti extends OracleEntegrasyonTestTabani {
     // ------------------------------------------------------------------ Model
 
     @Test
-    void shouldCreateSarfModelOnlyWithSarfBrand() {
+    void shouldRequireBrandForEveryModelAndAcceptOnlyBrandOfSameType() {
         long sarfMarka = veri.marka(MalzemeTuru.SARF, "Canon");
         long demirbasMarka = veri.marka(MalzemeTuru.DEMIRBAS, "Dell");
 
         assertThat(modeller.post(TanimFixture.sarfModeli("Toner", demirbasMarka)))
             .hasStatus(422).bodyJson().extractingPath("$.alan").isEqualTo("markaId");
         assertThat(modeller.post(TanimFixture.sarfModeli("Toner", sarfMarka).olmadan("markaId")))
-            .hasStatus(422).bodyJson().extractingPath("$.detail").isEqualTo("Sarf modelinde “markaId” zorunludur.");
+            .hasStatus(400).bodyJson().extractingPath("$.hatalar[0].alan").isEqualTo("markaId");
+        assertThat(modeller.post(TanimFixture.demirbasModeli("ThinkPad", demirbasMarka).olmadan("markaId")))
+            .as("demirbaş modelinde de marka zorunlu").hasStatus(400).bodyJson()
+            .extractingPath("$.hatalar[0].alan").isEqualTo("markaId");
 
         long aktifsiz = modeller.olustur(TanimFixture.sarfModeli("Toner 85A", sarfMarka).olmadan("aktif"));
         assertThat(modeller.get(aktifsiz)).as("aktif boşsa true").hasStatusOk().bodyJson()
@@ -173,7 +176,7 @@ class TanimEntegrasyonTesti extends OracleEntegrasyonTestTabani {
     @Test
     void shouldBlockModelDeleteWhileActiveEnvanterUsesItAndHideDeletedBrand() {
         long markaId = veri.marka(MalzemeTuru.DEMIRBAS, "Lenovo");
-        long modelId = modeller.olustur(TanimFixture.demirbasModeli("ThinkPad").ile("markaId", markaId));
+        long modelId = modeller.olustur(TanimFixture.demirbasModeli("ThinkPad", markaId));
         long envanterId = veri.demirbasEnvanter(e -> e.setModel(veri.bul(Model.class, modelId)));
 
         assertThat(modeller.delete(modelId)).hasStatus(409);
@@ -181,6 +184,21 @@ class TanimEntegrasyonTesti extends OracleEntegrasyonTestTabani {
         veri.sil(Marka.class, markaId);
         assertThat(modeller.get(modelId)).hasStatusOk().bodyJson().hasPathSatisfying("$.marka", m -> assertThat(m).isNull());
         assertThat(modeller.delete(modelId)).hasStatus(204);
+    }
+
+    @Test
+    void shouldNotClearModelBrandOnUpdateButKeepLegacyBrandlessModelEditable() {
+        long markaId = veri.marka(MalzemeTuru.DEMIRBAS, "Asus");
+        long modelId = modeller.olustur(TanimFixture.demirbasModeli("ZenBook", markaId));
+
+        assertThat(modeller.put(modelId, TanimFixture.demirbasModeli("ZenBook 14", markaId).olmadan("markaId").guncelleme(0)))
+            .hasStatus(422).bodyJson().extractingPath("$.detail")
+            .isEqualTo("Modelin markası boşaltılamaz; güncellemede “markaId” gönderilmelidir.");
+        assertThat(modeller.get(modelId)).hasStatusOk().bodyJson().extractingPath("$.ad").isEqualTo("ZenBook");
+
+        long legacy = veri.markasizDemirbasModeli("Eski Model");
+        assertThat(modeller.put(legacy, TanimFixture.demirbasModeli("Eski Model 2", markaId).olmadan("markaId")
+            .guncelleme(0))).as("legacy'den markasız gelen model markasız kalabilir").hasStatusOk();
     }
 
     // ------------------------------------------------------------------ İhale

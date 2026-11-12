@@ -11,15 +11,18 @@ public final class EnvanterFixture {
     private EnvanterFixture() {
     }
 
-    public static IstekGovdesi demirbas() {
+    /** Geçerli demirbaş: zorunlu kategori, marka ve model {@code tanimlar}'dan. */
+    public static IstekGovdesi demirbas(TanimSeti tanimlar) {
         long numara = SAYAC.incrementAndGet();
-        return IstekGovdesi.yeni("durum", "NORMAL", "kayitTarihi", TanimFixture.TARIH, "demirbasNo", numara,
-            "seriNo", "SN-" + numara, "ad", "Dizüstü Bilgisayar", "alimYolu", "BILGI_ISLEM_DB", "zimmetliSicil", "01234",
-            "garantiBaslangic", "2026-01-01T00:00:00", "garantiBitis", "2028-01-01T00:00:00");
+        return tanimlar.uygula(IstekGovdesi.yeni("durum", "NORMAL", "kayitTarihi", TanimFixture.TARIH,
+            "demirbasNo", numara, "seriNo", "SN-" + numara, "ad", "Dizüstü Bilgisayar", "alimYolu", "BILGI_ISLEM_DB",
+            "zimmetliSicil", "01234", "garantiBaslangic", "2026-01-01T00:00:00", "garantiBitis", "2028-01-01T00:00:00"));
     }
 
-    public static IstekGovdesi sarf(String ad) {
-        return IstekGovdesi.yeni("ad", ad, "aciklama", "Ofis sarfı", "durumKodu", "1", "kayitTarihi", TanimFixture.TARIH);
+    /** Geçerli sarf malzemesi: zorunlu kategori, marka ve model {@code tanimlar}'dan. */
+    public static IstekGovdesi sarf(String ad, TanimSeti tanimlar) {
+        return tanimlar.uygula(IstekGovdesi.yeni("ad", ad, "aciklama", "Ofis sarfı", "durumKodu", "1",
+            "kayitTarihi", TanimFixture.TARIH));
     }
 
     public static IstekGovdesi barkod(String barkod) {

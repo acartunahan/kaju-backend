@@ -90,7 +90,8 @@ public class DemirbasServiceImpl extends AbstractSoftDeleteServiceImpl<Envanter>
         tekilOlmali(demirbas, istek.demirbasNo(), istek.seriNo());
         Sicil oncekiZimmetliSicil = demirbas.getZimmetliSicil();
         mapper.guncelle(istek, demirbas);
-        envanterService.bagla(demirbas, istek.kategoriId(), istek.markaId(), istek.modelId(), istek.depoId(), istek.ihaleId());
+        envanterService.guncellemedeBagla(demirbas, istek.kategoriId(), istek.markaId(), istek.modelId(), istek.depoId(),
+            istek.ihaleId());
         zimmetGecmisiService.degisiklikVarsaKaydet(demirbas, oncekiZimmetliSicil);
         repository.flush();
         return mapper.cevap(demirbas);

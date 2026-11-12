@@ -8,8 +8,8 @@ import tr.depo.domain.envanter.AlimYolu;
 import tr.depo.domain.envanter.DemirbasDurumu;
 
 /**
- * Yeni demirbaş (ENVANTER, TUR = DEMIRBAS). Sınırlar ENVANTER tablosuyla aynıdır. Kategori, marka ve model DEMIRBAS
- * türünde olmalı. {@code birimKodu}, {@code alimTuruKodu}, {@code ilSubeDaireBskNo} legacy ham değerlerdir.
+ * Yeni demirbaş (ENVANTER, TUR = DEMIRBAS). Sınırlar ENVANTER tablosuyla aynıdır. Kategori, marka ve model zorunlu ve
+ * DEMIRBAS türünde olmalı; model seçilen markaya ait olmalı. {@code birimKodu}, {@code alimTuruKodu}, {@code ilSubeDaireBskNo} legacy ham değerlerdir.
  *
  * @param durum       zorunlu (domain)
  * @param kayitTarihi zorunlu (domain)
@@ -52,10 +52,13 @@ public record CreateDemirbasRequest(
 
     LocalDateTime garantiBitis,
 
+    @NotNull(message = "{dogrulama.zorunlu}")
     Long kategoriId,
 
+    @NotNull(message = "{dogrulama.zorunlu}")
     Long markaId,
 
+    @NotNull(message = "{dogrulama.zorunlu}")
     Long modelId,
 
     Long depoId,

@@ -56,7 +56,8 @@ public class DemirbasController {
 
     @PostMapping
     @Operation(summary = "Demirbaş oluşturur",
-        description = "Kategori, marka ve model DEMIRBAS türünde olmalı; garanti bitişi başlangıçtan önce olamaz (422).")
+        description = "Kategori, marka ve model zorunlu (eksikse 400), DEMIRBAS türünde olmalı ve model seçilen markaya "
+            + "ait olmalı; garanti bitişi başlangıçtan önce olamaz (422).")
     public ResponseEntity<DemirbasResponse> olustur(@Valid @RequestBody CreateDemirbasRequest istek) {
         DemirbasResponse olusan = demirbasService.olustur(istek);
         return ResponseEntity.created(KaynakKonumu.yeniKayit(olusan.id())).body(olusan);

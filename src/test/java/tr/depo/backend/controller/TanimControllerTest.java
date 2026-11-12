@@ -73,7 +73,15 @@ class TanimControllerTest {
     void shouldRequireTypeForTypedDefinitions() {
         assertThat(post("/api/v1/firmalar", TanimFixture.sarfFirmasi().olmadan("tur"))).hasStatus(400);
         assertThat(post("/api/v1/kategoriler", TanimFixture.sarfKategorisi("Toner").olmadan("tur"))).hasStatus(400);
-        assertThat(post("/api/v1/modeller", TanimFixture.demirbasModeli("X").olmadan("tur"))).hasStatus(400);
+        assertThat(post("/api/v1/modeller", TanimFixture.demirbasModeli("X", 1L).olmadan("tur"))).hasStatus(400);
+    }
+
+    @Test
+    void shouldRequireBrandForNewModelOfEitherType() {
+        assertThat(post("/api/v1/modeller", TanimFixture.demirbasModeli("X", 1L).olmadan("markaId")))
+            .hasStatus(400).bodyJson().extractingPath("$.hatalar[0].alan").isEqualTo("markaId");
+        assertThat(post("/api/v1/modeller", TanimFixture.sarfModeli("Toner", 1L).olmadan("markaId")))
+            .hasStatus(400).bodyJson().extractingPath("$.hatalar[0].alan").isEqualTo("markaId");
     }
 
     @Test

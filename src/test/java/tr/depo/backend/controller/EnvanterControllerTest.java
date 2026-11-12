@@ -28,6 +28,7 @@ import tr.depo.backend.service.SarfMalzemesiService;
 import tr.depo.backend.service.ZimmetGecmisiService;
 import tr.depo.backend.util.EnvanterFixture;
 import tr.depo.backend.util.IstekGovdesi;
+import tr.depo.backend.util.TanimSeti;
 
 /** Envanter controller'larının web sözleşmesi: yollar (iç içe alt kaynaklar dahil), 201 + Location, doğrulama, 204. */
 @WebMvcTest({DemirbasController.class, SarfMalzemesiController.class, BarkodController.class,
@@ -57,7 +58,7 @@ class EnvanterControllerTest {
 
     @Test
     void shouldRequireStatusAndRegistrationDateForDemirbas() {
-        assertThat(post("/api/v1/demirbaslar", EnvanterFixture.demirbas().olmadan("durum").olmadan("kayitTarihi")))
+        assertThat(post("/api/v1/demirbaslar", EnvanterFixture.demirbas(TanimSeti.SAHTE).olmadan("durum").olmadan("kayitTarihi")))
             .hasStatus(400)
             .bodyJson().hasPathSatisfying("$.hatalar[*].alan",
                 alanlar -> assertThat(alanlar).asArray().containsExactlyInAnyOrder("durum", "kayitTarihi"));
@@ -65,15 +66,29 @@ class EnvanterControllerTest {
     }
 
     @Test
+    void shouldRequireCategoryBrandAndModelForNewDemirbasAndSarf() {
+        for (String yol : new String[] {"/api/v1/demirbaslar", "/api/v1/sarf-malzemeleri"}) {
+            IstekGovdesi govde = yol.endsWith("demirbaslar")
+                ? EnvanterFixture.demirbas(TanimSeti.SAHTE)
+                : EnvanterFixture.sarf("Toner", TanimSeti.SAHTE);
+            assertThat(post(yol, govde.olmadan("kategoriId").olmadan("markaId").olmadan("modelId")))
+                .as(yol).hasStatus(400)
+                .bodyJson().hasPathSatisfying("$.hatalar[*].alan",
+                    alanlar -> assertThat(alanlar).asArray().containsExactlyInAnyOrder("kategoriId", "markaId", "modelId"));
+        }
+        verifyNoInteractions(demirbasService, sarfMalzemesiService);
+    }
+
+    @Test
     void shouldReturn400ForUnknownEnumValue() {
-        assertThat(post("/api/v1/demirbaslar", EnvanterFixture.demirbas().ile("durum", "KAYIP")))
+        assertThat(post("/api/v1/demirbaslar", EnvanterFixture.demirbas(TanimSeti.SAHTE).ile("durum", "KAYIP")))
             .hasStatus(400)
             .bodyJson().extractingPath("$.kod").isEqualTo("GECERSIZ_ISTEK");
     }
 
     @Test
     void shouldRequireNameForSarf() {
-        assertThat(post("/api/v1/sarf-malzemeleri", EnvanterFixture.sarf(" "))).hasStatus(400);
+        assertThat(post("/api/v1/sarf-malzemeleri", EnvanterFixture.sarf(" ", TanimSeti.SAHTE))).hasStatus(400);
     }
 
     @Test

@@ -12,6 +12,7 @@ import tr.depo.domain.envanter.Envanter;
 import tr.depo.domain.envanter.EnvanterHareketi;
 import tr.depo.domain.ortak.BaseEntity;
 import tr.depo.domain.tanim.Depo;
+import tr.depo.domain.tanim.Kategori;
 import tr.depo.domain.tanim.MalzemeTuru;
 import tr.depo.domain.tanim.Marka;
 import tr.depo.domain.tanim.Model;
@@ -51,6 +52,11 @@ public final class VeritabaniFixture {
         });
     }
 
+    /** Legacy'den markasız gelmiş bir demirbaş modeli (API artık markasız model oluşturmaz). */
+    public long markasizDemirbasModeli(String ad) {
+        return kaydet(Model.demirbasModeli(ad));
+    }
+
     public long sarfModeli(long markaId, String ad) {
         return islem.execute(durum -> {
             Model model = Model.sarfModeli(entityManager.find(Marka.class, markaId), ad, true);
@@ -58,6 +64,20 @@ public final class VeritabaniFixture {
             entityManager.flush();
             return model.getId();
         });
+    }
+
+    /** Ürün oluşturmak için zorunlu demirbaş tanımları: kategori, marka ve o markanın modeli. */
+    public TanimSeti demirbasTanimlari(String ad) {
+        long kategoriId = kaydet(Kategori.demirbasKategorisi(ad + " Kategorisi", "1"));
+        long markaId = marka(MalzemeTuru.DEMIRBAS, ad + " Markası");
+        return new TanimSeti(kategoriId, markaId, demirbasModeli(markaId, ad + " Modeli"));
+    }
+
+    /** Ürün oluşturmak için zorunlu sarf tanımları: kategori, marka ve o markanın modeli. */
+    public TanimSeti sarfTanimlari(String ad) {
+        long kategoriId = kaydet(Kategori.sarfKategorisi(ad + " Kategorisi"));
+        long markaId = marka(MalzemeTuru.SARF, ad + " Markası");
+        return new TanimSeti(kategoriId, markaId, sarfModeli(markaId, ad + " Modeli"));
     }
 
     /** Demirbaş envanter; {@code ayar} ile ilişkiler bağlanır (ör. {@code e -> e.setDepo(bul(Depo.class, id))}). */
