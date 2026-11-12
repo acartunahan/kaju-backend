@@ -7,6 +7,7 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -23,6 +24,9 @@ class UygulamaEntegrasyonTesti extends OracleEntegrasyonTestTabani {
     @Autowired
     private MockMvcTester mvc;
 
+    @Autowired
+    private Flyway flyway;
+
     @Test
     void shouldApplyDomainFlywaySchemaWithSoftDeleteTriggers() throws Exception {
         try (Connection baglanti = OracleTestOrtami.baglanti(); Statement ifade = baglanti.createStatement()) {
@@ -35,6 +39,28 @@ class UygulamaEntegrasyonTesti extends OracleEntegrasyonTestTabani {
                 + "AND STATUS = 'ENABLED'")).isEqualTo(20);
             assertThat(isimler(ifade, "SELECT TABLE_NAME FROM USER_TABLES WHERE TABLE_NAME LIKE 'MIG\\_%' ESCAPE '\\' "
                 + "OR TABLE_NAME LIKE 'BATCH\\_%' ESCAPE '\\'")).as("göç tabloları bu projede kurulmaz").isEmpty();
+        }
+    }
+
+    /**
+     * Migration uygulaması aynı şemaya V1000/V1001 (göç tabloları) uygular. Bu script'ler backend'de yok ve
+     * domain'in son sürümünden büyük oldukları için Flyway onları "future" sayar. ignore-migration-patterns
+     * ayarı Flyway'in varsayılanı olan "*:future"ı ezdiği için ikisi de açıkça yazılmalı.
+     */
+    @Test
+    void shouldValidateSchemaMigratedByMigrationApp() throws Exception {
+        try (Connection baglanti = OracleTestOrtami.baglanti(); Statement ifade = baglanti.createStatement()) {
+            for (String surum : List.of("1000", "1001")) {
+                ifade.executeUpdate("INSERT INTO \"flyway_schema_history\" (\"installed_rank\", \"version\", \"description\", "
+                    + "\"type\", \"script\", \"checksum\", \"installed_by\", \"installed_on\", \"execution_time\", \"success\") "
+                    + "SELECT MAX(\"installed_rank\") + 1, '" + surum + "', 'goc', 'SQL', 'V" + surum + "__goc.sql', 1, USER, "
+                    + "SYSTIMESTAMP, 0, 1 FROM \"flyway_schema_history\"");
+            }
+            try {
+                assertThat(flyway.validateWithResult().validationSuccessful).isTrue();
+            } finally {
+                ifade.executeUpdate("DELETE FROM \"flyway_schema_history\" WHERE \"version\" IN ('1000', '1001')");
+            }
         }
     }
 

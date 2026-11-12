@@ -86,6 +86,13 @@
             <artifactId>ojdbc11</artifactId>
             <scope>runtime</scope>
         </dependency>
+        <!-- AL32UTF8/UTF8/US7ASCII dışındaki veritabanı karakter setleri (ör. WE8ISO8859P9) için gerekli;
+             yoksa ORA-17056 "Non-supported character set". Sürümü Spring Boot'un ojdbc BOM'u belirler. -->
+        <dependency>
+            <groupId>com.oracle.database.nls</groupId>
+            <artifactId>orai18n</artifactId>
+            <scope>runtime</scope>
+        </dependency>
 
         <dependency>
             <groupId>org.mapstruct</groupId>
