@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import tr.depo.backend.dto.CreateMarkaRequest;
+import tr.depo.backend.dto.MarkaFiltreRequest;
 import tr.depo.backend.dto.MarkaResponse;
 import tr.depo.backend.dto.SayfaResponse;
 import tr.depo.backend.dto.UpdateMarkaRequest;
@@ -42,9 +43,11 @@ public class MarkaController {
 
     @GetMapping
     @Operation(summary = "Markaları listeler",
-        description = "Sayfalı; sıralama alanları: id, tur, ad, kayitTarihi, olusturmaZamani. Silinmişler dönmez.")
-    public SayfaResponse<MarkaResponse> listele(@ParameterObject Pageable sayfa) {
-        return markaService.listele(sayfa);
+        description = "Sayfalı; sıralama alanları: id, tur, ad, kayitTarihi, olusturmaZamani. Silinmişler dönmez. "
+            + "Filtreler birlikte uygulanır: tur, ad (içerir), aktif.")
+    public SayfaResponse<MarkaResponse> listele(@Valid @ParameterObject MarkaFiltreRequest filtre,
+                                                @ParameterObject Pageable sayfa) {
+        return markaService.listele(filtre, sayfa);
     }
 
     @PostMapping

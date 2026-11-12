@@ -7,12 +7,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tr.depo.backend.dto.CreateModelRequest;
 import tr.depo.backend.dto.KullanimReferansi;
+import tr.depo.backend.dto.ModelFiltreRequest;
 import tr.depo.backend.dto.ModelResponse;
 import tr.depo.backend.dto.SayfaResponse;
 import tr.depo.backend.dto.UpdateModelRequest;
 import tr.depo.backend.exception.IsKuraliException;
 import tr.depo.backend.mapper.ModelMapper;
 import tr.depo.backend.repository.ModelRepository;
+import tr.depo.backend.repository.KosulluSorguRepository;
 import tr.depo.backend.service.ModelService;
 import tr.depo.backend.service.ReferansService;
 import tr.depo.backend.service.SilmeService;
@@ -57,9 +59,10 @@ public class ModelServiceImpl extends AbstractSoftDeleteServiceImpl<Model> imple
     }
 
     @Override
-    public SayfaResponse<ModelResponse> listele(Pageable sayfa) {
+    public SayfaResponse<ModelResponse> listele(ModelFiltreRequest filtre, Pageable sayfa) {
         SiralamaDogrulayici.dogrula(sayfa, SIRALAMA_ALANLARI);
-        return SayfaResponse.of(repository.findAll(sayfa).map(mapper::cevap));
+        return SayfaResponse.of(repository.filtrele(filtre.tur(), filtre.markaId(), filtre.kategoriId(), filtre.aktif(),
+            KosulluSorguRepository.icerirDeseni(filtre.ad()), sayfa).map(mapper::cevap));
     }
 
     @Override

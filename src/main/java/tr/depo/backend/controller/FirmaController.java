@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import tr.depo.backend.dto.CreateFirmaRequest;
 import tr.depo.backend.dto.FirmaResponse;
 import tr.depo.backend.dto.SayfaResponse;
+import tr.depo.backend.dto.TurFiltreRequest;
 import tr.depo.backend.dto.UpdateFirmaRequest;
 import tr.depo.backend.service.FirmaService;
 import tr.depo.backend.util.KaynakKonumu;
@@ -41,9 +42,10 @@ public class FirmaController {
     }
 
     @GetMapping
-    @Operation(summary = "Firmaları listeler", description = "Sayfalı; sıralama alanları: id, tur, ad, kayitTarihi, olusturmaZamani.")
-    public SayfaResponse<FirmaResponse> listele(@ParameterObject Pageable sayfa) {
-        return firmaService.listele(sayfa);
+    @Operation(summary = "Firmaları listeler",
+        description = "Sayfalı; sıralama alanları: id, tur, ad, kayitTarihi, olusturmaZamani. tur verilirse yalnızca o türden.")
+    public SayfaResponse<FirmaResponse> listele(@ParameterObject TurFiltreRequest filtre, @ParameterObject Pageable sayfa) {
+        return firmaService.listele(filtre, sayfa);
     }
 
     @PostMapping

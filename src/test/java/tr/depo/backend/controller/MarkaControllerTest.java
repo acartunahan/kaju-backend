@@ -103,7 +103,7 @@ class MarkaControllerTest {
 
     @Test
     void shouldReturnOwnPageModelAndCapPageSize() {
-        when(markaService.listele(any(Pageable.class))).thenReturn(new SayfaResponse<>(List.of(cevap(1)), 0, 100, 1, 1));
+        when(markaService.listele(any(), any(Pageable.class))).thenReturn(new SayfaResponse<>(List.of(cevap(1)), 0, 100, 1, 1));
 
         assertThat(mvc.get().uri(YOL + "?page=0&size=500&sort=ad,asc"))
             .hasStatusOk()
@@ -112,7 +112,7 @@ class MarkaControllerTest {
             .hasPathSatisfying("$.toplamEleman", t -> assertThat(t).asNumber().isEqualTo(1));
 
         ArgumentCaptor<Pageable> sayfa = ArgumentCaptor.forClass(Pageable.class);
-        verify(markaService).listele(sayfa.capture());
+        verify(markaService).listele(any(), sayfa.capture());
         assertThat(sayfa.getValue().getPageSize()).as("sayfa boyutu üst sınırı").isEqualTo(100);
         assertThat(sayfa.getValue().getSort().getOrderFor("ad")).isNotNull();
     }

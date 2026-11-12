@@ -5,6 +5,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tr.depo.backend.dto.CreateSarfMalzemesiRequest;
+import tr.depo.backend.dto.EnvanterAramaKriteri;
+import tr.depo.backend.dto.SarfMalzemesiFiltreRequest;
 import tr.depo.backend.dto.SarfMalzemesiResponse;
 import tr.depo.backend.dto.SayfaResponse;
 import tr.depo.backend.dto.UpdateSarfMalzemesiRequest;
@@ -43,9 +45,9 @@ public class SarfMalzemesiServiceImpl extends AbstractSoftDeleteServiceImpl<Enva
     }
 
     @Override
-    public SayfaResponse<SarfMalzemesiResponse> listele(Pageable sayfa) {
+    public SayfaResponse<SarfMalzemesiResponse> listele(SarfMalzemesiFiltreRequest filtre, Pageable sayfa) {
         SiralamaDogrulayici.dogrula(sayfa, SIRALAMA_ALANLARI);
-        return SayfaResponse.of(repository.findByTur(MalzemeTuru.SARF, sayfa).map(mapper::cevap));
+        return SayfaResponse.of(envanterService.ara(EnvanterAramaKriteri.sarf(filtre), sayfa).map(mapper::cevap));
     }
 
     @Override

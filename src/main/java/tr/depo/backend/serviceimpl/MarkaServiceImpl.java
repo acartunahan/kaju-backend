@@ -7,11 +7,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tr.depo.backend.dto.CreateMarkaRequest;
 import tr.depo.backend.dto.KullanimReferansi;
+import tr.depo.backend.dto.MarkaFiltreRequest;
 import tr.depo.backend.dto.MarkaResponse;
 import tr.depo.backend.dto.SayfaResponse;
 import tr.depo.backend.dto.UpdateMarkaRequest;
 import tr.depo.backend.exception.IsKuraliException;
 import tr.depo.backend.mapper.MarkaMapper;
+import tr.depo.backend.repository.KosulluSorguRepository;
 import tr.depo.backend.repository.MarkaRepository;
 import tr.depo.backend.service.MarkaService;
 import tr.depo.backend.service.ReferansService;
@@ -54,9 +56,10 @@ public class MarkaServiceImpl extends AbstractSoftDeleteServiceImpl<Marka> imple
     }
 
     @Override
-    public SayfaResponse<MarkaResponse> listele(Pageable sayfa) {
+    public SayfaResponse<MarkaResponse> listele(MarkaFiltreRequest filtre, Pageable sayfa) {
         SiralamaDogrulayici.dogrula(sayfa, SIRALAMA_ALANLARI);
-        return SayfaResponse.of(repository.findAll(sayfa).map(mapper::cevap));
+        return SayfaResponse.of(repository.filtrele(filtre.tur(), filtre.aktif(),
+            KosulluSorguRepository.icerirDeseni(filtre.ad()), sayfa).map(mapper::cevap));
     }
 
     @Override

@@ -4,6 +4,7 @@ import org.springframework.data.domain.Pageable;
 import tr.depo.backend.dto.CreateFirmaRequest;
 import tr.depo.backend.dto.FirmaResponse;
 import tr.depo.backend.dto.SayfaResponse;
+import tr.depo.backend.dto.TurFiltreRequest;
 import tr.depo.backend.dto.UpdateFirmaRequest;
 
 public interface FirmaService {
@@ -12,7 +13,7 @@ public interface FirmaService {
     FirmaResponse getir(Long id);
 
     /** Silinmemiş firmalar, sayfalı. */
-    SayfaResponse<FirmaResponse> listele(Pageable sayfa);
+    SayfaResponse<FirmaResponse> listele(TurFiltreRequest filtre, Pageable sayfa);
 
     FirmaResponse olustur(CreateFirmaRequest istek);
 

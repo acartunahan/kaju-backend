@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -18,17 +19,22 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
+import tr.depo.backend.dto.DemirbasFiltreRequest;
 import tr.depo.backend.dto.EnvanterAparatiResponse;
+import tr.depo.backend.dto.SarfMalzemesiFiltreRequest;
 import tr.depo.backend.exception.OracleHataCevirici;
+import tr.depo.backend.service.ArizaService;
 import tr.depo.backend.service.BarkodService;
 import tr.depo.backend.service.DemirbasService;
 import tr.depo.backend.service.EnvanterAparatiService;
+import tr.depo.backend.service.EnvanterHareketiService;
 import tr.depo.backend.service.EnvanterNotuService;
 import tr.depo.backend.service.SarfMalzemesiService;
 import tr.depo.backend.service.ZimmetGecmisiService;
 import tr.depo.backend.util.EnvanterFixture;
 import tr.depo.backend.util.IstekGovdesi;
 import tr.depo.backend.util.TanimSeti;
+import tr.depo.domain.envanter.DemirbasDurumu;
 
 /** Envanter controller'larının web sözleşmesi: yollar (iç içe alt kaynaklar dahil), 201 + Location, doğrulama, 204. */
 @WebMvcTest({DemirbasController.class, SarfMalzemesiController.class, BarkodController.class,
@@ -51,6 +57,10 @@ class EnvanterControllerTest {
     private EnvanterAparatiService aparatService;
     @MockitoBean
     private ZimmetGecmisiService zimmetGecmisiService;
+    @MockitoBean
+    private EnvanterHareketiService hareketService;
+    @MockitoBean
+    private ArizaService arizaService;
 
     private MvcTestResult post(String yol, IstekGovdesi govde) {
         return mvc.post().uri(yol).contentType(MediaType.APPLICATION_JSON).content(govde.json()).exchange();
@@ -111,13 +121,39 @@ class EnvanterControllerTest {
     }
 
     @Test
-    void shouldFilterDemirbaslarBySicilOnlyWhenTheParameterIsGiven() {
-        assertThat(mvc.get().uri("/api/v1/demirbaslar").param("zimmetliSicil", "0012345")).hasStatusOk();
-        verify(demirbasService).zimmetliListele(eq("0012345"), any(Pageable.class));
+    void shouldBindAllDemirbasFiltersFromQueryParameters() {
+        assertThat(mvc.get().uri("/api/v1/demirbaslar").param("kategoriId", "3").param("altKategoriler", "false")
+            .param("markaId", "4").param("modelId", "5").param("depoId", "6").param("ihaleId", "7")
+            .param("durum", "NORMAL").param("zimmetliSicil", "0012345").param("zimmetli", "true").param("q", "laptop"))
+            .hasStatusOk();
+
+        ArgumentCaptor<DemirbasFiltreRequest> filtre = ArgumentCaptor.forClass(DemirbasFiltreRequest.class);
+        verify(demirbasService).listele(filtre.capture(), any(Pageable.class));
+        assertThat(filtre.getValue()).isEqualTo(new DemirbasFiltreRequest(3L, false, 4L, 5L, 6L, 7L,
+            DemirbasDurumu.NORMAL, "0012345", true, "laptop"));
 
         assertThat(mvc.get().uri("/api/v1/demirbaslar")).hasStatusOk();
-        verify(demirbasService).listele(any(Pageable.class));
+        verify(demirbasService).listele(
+            eq(new DemirbasFiltreRequest(null, null, null, null, null, null, null, null, null, null)), any(Pageable.class));
+        assertThat(mvc.get().uri("/api/v1/demirbaslar").param("durum", "KAYIP")).as("bilinmeyen durum").hasStatus(400);
         verifyNoMoreInteractions(demirbasService);
+    }
+
+    @Test
+    void shouldRouteLookupAndHistoryEndpointsOfDemirbasAndSarf() {
+        assertThat(mvc.get().uri("/api/v1/demirbaslar/bul").param("barkod", "8690001")).hasStatusOk();
+        verify(demirbasService).bul("8690001", null, null);
+
+        assertThat(mvc.get().uri("/api/v1/demirbaslar/7/hareketler")).hasStatusOk();
+        verify(hareketService).demirbasHareketleri(eq(7L), any(Pageable.class));
+        assertThat(mvc.get().uri("/api/v1/sarf-malzemeleri/8/hareketler")).hasStatusOk();
+        verify(hareketService).sarfHareketleri(eq(8L), any(Pageable.class));
+        assertThat(mvc.get().uri("/api/v1/demirbaslar/7/arizalar")).hasStatusOk();
+        verify(arizaService).demirbasArizalari(eq(7L), any(Pageable.class));
+
+        assertThat(mvc.get().uri("/api/v1/sarf-malzemeleri").param("kategoriId", "3").param("q", "toner")).hasStatusOk();
+        verify(sarfMalzemesiService).listele(eq(new SarfMalzemesiFiltreRequest(3L, null, null, null, null, "toner")),
+            any(Pageable.class));
     }
 
     @Test

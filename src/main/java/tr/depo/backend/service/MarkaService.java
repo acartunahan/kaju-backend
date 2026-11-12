@@ -2,6 +2,7 @@ package tr.depo.backend.service;
 
 import org.springframework.data.domain.Pageable;
 import tr.depo.backend.dto.CreateMarkaRequest;
+import tr.depo.backend.dto.MarkaFiltreRequest;
 import tr.depo.backend.dto.MarkaResponse;
 import tr.depo.backend.dto.SayfaResponse;
 import tr.depo.backend.dto.UpdateMarkaRequest;
@@ -12,7 +13,7 @@ public interface MarkaService {
     MarkaResponse getir(Long id);
 
     /** Silinmemiş markalar, sayfalı. */
-    SayfaResponse<MarkaResponse> listele(Pageable sayfa);
+    SayfaResponse<MarkaResponse> listele(MarkaFiltreRequest filtre, Pageable sayfa);
 
     MarkaResponse olustur(CreateMarkaRequest istek);
 

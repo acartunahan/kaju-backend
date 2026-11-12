@@ -113,6 +113,28 @@ aggregate'in alt kayıtları aynı transaction'da soft delete edilir.
 | Zimmet kaydı | `/zimmet-kayitlari` | Yalnızca GET, POST (geçmiş kaydı) | Yok (405) |
 | Zimmet geçmişi | `/demirbaslar/{demirbasId}/zimmet-gecmisi` | Yalnızca GET (en yeni önce). Zimmetli sicil değişince demirbaş servisi otomatik yazar; migration başlangıç kaydını yazar | Yok (405) |
 
+### Liste filtreleri, arama ve geçmiş
+
+Liste filtreleri isteğe bağlıdır ve birlikte uygulanır (`?kategoriId=3&markaId=5&depoId=1`); silinmiş kayıtlar hiçbir
+listede görünmez. Metin aramaları büyük/küçük harf duyarsız "içerir"dir; `%` ve `_` joker sayılmaz.
+
+| Uç | Filtreler / açıklama |
+|---|---|
+| `GET /demirbaslar` | `kategoriId` (alt kategoriler dahil; `altKategoriler=false` ile yalnızca o kategori), `markaId`, `modelId`, `depoId`, `ihaleId`, `durum`, `zimmetliSicil` (tam eşleşme), `zimmetli` (true: birine zimmetli, false: kimseye zimmetli olmayan), `q` (ad, seri no, demirbaş no, açıklama, barkod) |
+| `GET /sarf-malzemeleri` | `kategoriId`, `altKategoriler`, `markaId`, `modelId`, `depoId`, `q` (ad, açıklama, barkod) |
+| `GET /demirbaslar/bul` | `barkod`, `seriNo` ya da `demirbasNo` (tam biri; tam eşleşme). Legacy tekrarları için liste döner (en fazla 100) |
+| `GET /modeller` | `tur`, `markaId`, `kategoriId`, `ad`, `aktif` |
+| `GET /markalar` | `tur`, `ad`, `aktif` |
+| `GET /kategoriler` | `tur`, `ad`, `ustKategoriId` (doğrudan alt kategoriler) |
+| `GET /kategoriler/agac` | `tur`; iç içe ağaç, sayfasız. Legacy döngüsündeki kategoriler döngü kırılarak köke eklenir |
+| `GET /firmalar` | `tur` |
+| `GET /demirbaslar/{id}/hareketler`, `GET /sarf-malzemeleri/{id}/hareketler` | Ürünün hareketleri, en yeni önce; tür uyuşmazsa ya da silinmişse 404 |
+| `GET /demirbaslar/{id}/arizalar` | Demirbaşın arızaları, en yeni önce |
+| `GET /envanter-hareketleri` | `depoId`: o depodan çıkan, o depoya giren ya da o deponun aldığı hareketler |
+
+Filtreli sorgular `KosulluSorguRepository` (Criteria API) ve repository'lerdeki isteğe bağlı parametreli JPQL ile
+yazılır; `JpaSpecificationExecutor` bilerek kullanılmaz çünkü `delete(Specification)` açar.
+
 Bilerek açılmayanlar: `COKLU_ZIMMET` ve `SQL_KAYDI` (anlamları doğrulanmadı), envanter fotoğrafı (dosya deposu
 bağlantısı sonra).
 

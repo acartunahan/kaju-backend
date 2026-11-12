@@ -1,19 +1,26 @@
 package tr.depo.backend.serviceimpl;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tr.depo.backend.dto.CreateKategoriRequest;
+import tr.depo.backend.dto.KategoriAgacResponse;
+import tr.depo.backend.dto.KategoriFiltreRequest;
 import tr.depo.backend.dto.KategoriResponse;
 import tr.depo.backend.dto.KullanimReferansi;
 import tr.depo.backend.dto.SayfaResponse;
+import tr.depo.backend.dto.TurFiltreRequest;
 import tr.depo.backend.dto.UpdateKategoriRequest;
 import tr.depo.backend.exception.IsKuraliException;
 import tr.depo.backend.mapper.KategoriMapper;
 import tr.depo.backend.repository.KategoriRepository;
+import tr.depo.backend.repository.KosulluSorguRepository;
 import tr.depo.backend.service.KategoriService;
 import tr.depo.backend.service.ReferansService;
 import tr.depo.backend.service.SilmeService;
@@ -58,9 +65,50 @@ public class KategoriServiceImpl extends AbstractSoftDeleteServiceImpl<Kategori>
     }
 
     @Override
-    public SayfaResponse<KategoriResponse> listele(Pageable sayfa) {
+    public SayfaResponse<KategoriResponse> listele(KategoriFiltreRequest filtre, Pageable sayfa) {
         SiralamaDogrulayici.dogrula(sayfa, SIRALAMA_ALANLARI);
-        return SayfaResponse.of(repository.findAll(sayfa).map(mapper::cevap));
+        return SayfaResponse.of(repository.filtrele(filtre.tur(), filtre.ustKategoriId(),
+            KosulluSorguRepository.icerirDeseni(filtre.ad()), sayfa).map(mapper::cevap));
+    }
+
+    @Override
+    public List<KategoriAgacResponse> agac(TurFiltreRequest filtre) {
+        List<Kategori> hepsi = repository.agacIcin(filtre.tur());
+        Set<Long> idler = new HashSet<>();
+        hepsi.forEach(k -> idler.add(k.getId()));
+        Map<Long, List<Kategori>> altlar = new HashMap<>();
+        List<Kategori> kokler = new ArrayList<>();
+        for (Kategori kategori : hepsi) {
+            Long ustId = kategori.getUst() == null ? null : kategori.getUst().getId();
+            if (ustId == null || !idler.contains(ustId)) {
+                kokler.add(kategori);
+            } else {
+                altlar.computeIfAbsent(ustId, x -> new ArrayList<>()).add(kategori);
+            }
+        }
+        Set<Long> gezilen = new HashSet<>();
+        List<KategoriAgacResponse> agac = new ArrayList<>();
+        for (Kategori kok : kokler) {
+            agac.add(dugum(kok, altlar, gezilen));
+        }
+        // Kökten ulaşılamayanlar (legacy döngüsü): döngü kırılarak köke eklenir, kayıt kaybolmaz.
+        for (Kategori kategori : hepsi) {
+            if (!gezilen.contains(kategori.getId())) {
+                agac.add(dugum(kategori, altlar, gezilen));
+            }
+        }
+        return agac;
+    }
+
+    private static KategoriAgacResponse dugum(Kategori kategori, Map<Long, List<Kategori>> altlar, Set<Long> gezilen) {
+        gezilen.add(kategori.getId());
+        List<KategoriAgacResponse> cocuklar = new ArrayList<>();
+        for (Kategori alt : altlar.getOrDefault(kategori.getId(), List.of())) {
+            if (!gezilen.contains(alt.getId())) {
+                cocuklar.add(dugum(alt, altlar, gezilen));
+            }
+        }
+        return new KategoriAgacResponse(kategori.getId(), kategori.getTur(), kategori.getAd(), cocuklar);
     }
 
     @Override

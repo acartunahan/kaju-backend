@@ -14,7 +14,22 @@ public interface EnvanterHareketiService {
     /** @throws tr.depo.backend.exception.KayitBulunamadiException yoksa ya da silinmişse */
     EnvanterHareketiResponse getir(Long id);
 
-    SayfaResponse<EnvanterHareketiResponse> listele(Pageable sayfa);
+    /** Silinmemiş hareketler, sayfalı. {@code depoId} verilirse o depodan çıkan, o depoya giren ya da o deponun aldığı hareketler. */
+    SayfaResponse<EnvanterHareketiResponse> listele(Long depoId, Pageable sayfa);
+
+    /**
+     * Bir demirbaşın hareketleri, sayfalı; sıralama verilmezse en yeni önce.
+     *
+     * @throws tr.depo.backend.exception.KayitBulunamadiException demirbaş yoksa, silinmişse ya da sarf ise (404)
+     */
+    SayfaResponse<EnvanterHareketiResponse> demirbasHareketleri(Long demirbasId, Pageable sayfa);
+
+    /**
+     * Bir sarf malzemesinin stok hareketleri, sayfalı; sıralama verilmezse en yeni önce.
+     *
+     * @throws tr.depo.backend.exception.KayitBulunamadiException sarf malzemesi yoksa, silinmişse ya da demirbaş ise (404)
+     */
+    SayfaResponse<EnvanterHareketiResponse> sarfHareketleri(Long sarfMalzemesiId, Pageable sayfa);
 
     EnvanterHareketiResponse olustur(CreateEnvanterHareketiRequest istek);
 }

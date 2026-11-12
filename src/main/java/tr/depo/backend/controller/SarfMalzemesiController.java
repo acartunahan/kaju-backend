@@ -15,9 +15,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import tr.depo.backend.dto.CreateSarfMalzemesiRequest;
+import tr.depo.backend.dto.EnvanterHareketiResponse;
+import tr.depo.backend.dto.SarfMalzemesiFiltreRequest;
 import tr.depo.backend.dto.SarfMalzemesiResponse;
 import tr.depo.backend.dto.SayfaResponse;
 import tr.depo.backend.dto.UpdateSarfMalzemesiRequest;
+import tr.depo.backend.service.EnvanterHareketiService;
 import tr.depo.backend.service.SarfMalzemesiService;
 import tr.depo.backend.util.KaynakKonumu;
 
@@ -29,9 +32,11 @@ public class SarfMalzemesiController {
     static final String YOL = ApiPaths.V1 + "/sarf-malzemeleri";
 
     private final SarfMalzemesiService sarfMalzemesiService;
+    private final EnvanterHareketiService hareketService;
 
-    public SarfMalzemesiController(SarfMalzemesiService sarfMalzemesiService) {
+    public SarfMalzemesiController(SarfMalzemesiService sarfMalzemesiService, EnvanterHareketiService hareketService) {
         this.sarfMalzemesiService = sarfMalzemesiService;
+        this.hareketService = hareketService;
     }
 
     @GetMapping("/{id}")
@@ -41,9 +46,21 @@ public class SarfMalzemesiController {
     }
 
     @GetMapping
-    @Operation(summary = "Sarf malzemelerini listeler", description = "Sayfalı; sıralama alanları: id, ad, kayitTarihi, olusturmaZamani.")
-    public SayfaResponse<SarfMalzemesiResponse> listele(@ParameterObject Pageable sayfa) {
-        return sarfMalzemesiService.listele(sayfa);
+    @Operation(summary = "Sarf malzemelerini listeler",
+        description = "Sayfalı; sıralama alanları: id, ad, kayitTarihi, olusturmaZamani. Filtreler birlikte uygulanır: "
+            + "kategoriId (alt kategoriler dahil; altKategoriler=false ile yalnızca o kategori), markaId, modelId, depoId, "
+            + "q (ad, açıklama, barkod).")
+    public SayfaResponse<SarfMalzemesiResponse> listele(@Valid @ParameterObject SarfMalzemesiFiltreRequest filtre,
+                                                        @ParameterObject Pageable sayfa) {
+        return sarfMalzemesiService.listele(filtre, sayfa);
+    }
+
+    @GetMapping("/{id}/hareketler")
+    @Operation(summary = "Sarf malzemesinin stok hareketlerini listeler",
+        description = "Sayfalı; varsayılan sıra en yeni önce; sıralama alanları: id, kayitTarihi, olusturmaZamani. "
+            + "Sarf malzemesi yoksa, silinmişse ya da demirbaş ise 404.")
+    public SayfaResponse<EnvanterHareketiResponse> hareketler(@PathVariable Long id, @ParameterObject Pageable sayfa) {
+        return hareketService.sarfHareketleri(id, sayfa);
     }
 
     @PostMapping

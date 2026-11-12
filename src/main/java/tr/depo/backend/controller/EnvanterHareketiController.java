@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import tr.depo.backend.dto.CreateEnvanterHareketiRequest;
 import tr.depo.backend.dto.EnvanterHareketiResponse;
@@ -39,9 +40,12 @@ public class EnvanterHareketiController {
     }
 
     @GetMapping
-    @Operation(summary = "Hareketleri listeler", description = "Sayfalı; sıralama alanları: id, kayitTarihi, olusturmaZamani.")
-    public SayfaResponse<EnvanterHareketiResponse> listele(@ParameterObject Pageable sayfa) {
-        return hareketService.listele(sayfa);
+    @Operation(summary = "Hareketleri listeler",
+        description = "Sayfalı; sıralama alanları: id, kayitTarihi, olusturmaZamani. depoId verilirse o depodan çıkan, "
+            + "o depoya giren ya da o deponun aldığı hareketler.")
+    public SayfaResponse<EnvanterHareketiResponse> listele(@RequestParam(required = false) Long depoId,
+                                                           @ParameterObject Pageable sayfa) {
+        return hareketService.listele(depoId, sayfa);
     }
 
     @PostMapping

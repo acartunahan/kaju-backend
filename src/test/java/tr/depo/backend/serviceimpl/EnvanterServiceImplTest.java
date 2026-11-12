@@ -31,6 +31,8 @@ import tr.depo.backend.mapper.IliskiOzetiMapper;
 import tr.depo.backend.mapper.SarfMalzemesiMapperImpl;
 import tr.depo.backend.repository.BarkodRepository;
 import tr.depo.backend.repository.EnvanterRepository;
+import tr.depo.backend.repository.KategoriRepository;
+import tr.depo.backend.repository.KosulluSorguRepository;
 import tr.depo.backend.service.EnvanterService;
 import tr.depo.backend.service.ReferansService;
 import tr.depo.backend.service.SilmeService;
@@ -59,13 +61,18 @@ class EnvanterServiceImplTest {
     private SilmeService silmeService;
     @Mock
     private ZimmetGecmisiService zimmetGecmisiService;
+    @Mock
+    private KategoriRepository kategoriRepository;
+    @Mock
+    private KosulluSorguRepository kosulluSorgu;
 
     private DemirbasServiceImpl demirbasServisi;
     private SarfMalzemesiServiceImpl sarfServisi;
 
     @BeforeEach
     void hazirla() {
-        EnvanterService envanterService = new EnvanterServiceImpl(referansService, silmeService);
+        EnvanterService envanterService = new EnvanterServiceImpl(referansService, silmeService, envanterRepository,
+            kategoriRepository, kosulluSorgu);
         demirbasServisi = new DemirbasServiceImpl(envanterRepository,
             new DemirbasMapperImpl(new IliskiOzetiMapper(), new DegerNesnesiMapper()), envanterService,
             zimmetGecmisiService, silmeService);

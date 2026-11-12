@@ -1,11 +1,32 @@
 package tr.depo.backend.serviceimpl;
 
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Path;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import tr.depo.backend.dto.EnvanterAramaKriteri;
 import tr.depo.backend.exception.IsKuraliException;
+import tr.depo.backend.exception.KayitBulunamadiException;
 import tr.depo.backend.exception.ReferansGecersizException;
+import tr.depo.backend.repository.EnvanterRepository;
+import tr.depo.backend.repository.KategoriRepository;
+import tr.depo.backend.repository.KosulluSorguRepository;
 import tr.depo.backend.service.EnvanterService;
+import tr.depo.backend.util.AktifKayitUtil;
+import tr.depo.domain.tanim.MalzemeTuru;
 import tr.depo.backend.service.ReferansService;
 import tr.depo.backend.service.SilmeService;
 import tr.depo.domain.envanter.Barkod;
@@ -39,12 +60,121 @@ public class EnvanterServiceImpl implements EnvanterService {
     private static final List<Class<? extends BaseEntity>> ALT_KAYIT_TURLERI =
         List.of(Barkod.class, EnvanterNotu.class, EnvanterAparati.class, EnvanterFotografi.class);
 
+    /** Cevapta özetlenen to-one ilişkiler; listede birlikte okunur (N+1 yok). */
+    private static final String[] OZETLENEN_ILISKILER = {"kategori", "marka", "model", "depo", "ihale"};
+
     private final ReferansService referansService;
     private final SilmeService silmeService;
+    private final EnvanterRepository envanterRepository;
+    private final KategoriRepository kategoriRepository;
+    private final KosulluSorguRepository kosulluSorgu;
 
-    public EnvanterServiceImpl(ReferansService referansService, SilmeService silmeService) {
+    public EnvanterServiceImpl(ReferansService referansService, SilmeService silmeService,
+                               EnvanterRepository envanterRepository, KategoriRepository kategoriRepository,
+                               KosulluSorguRepository kosulluSorgu) {
         this.referansService = referansService;
         this.silmeService = silmeService;
+        this.envanterRepository = envanterRepository;
+        this.kategoriRepository = kategoriRepository;
+        this.kosulluSorgu = kosulluSorgu;
+    }
+
+    @Override
+    public Envanter aktifBul(Long id, MalzemeTuru tur, String kaynakAdi) {
+        Envanter envanter = AktifKayitUtil.bul(envanterRepository, id, kaynakAdi);
+        if (envanter.getTur() != tur) {
+            throw new KayitBulunamadiException(kaynakAdi, id);
+        }
+        return envanter;
+    }
+
+    @Override
+    public Page<Envanter> ara(EnvanterAramaKriteri kriter, Pageable sayfa) {
+        return kosulluSorgu.sayfa(Envanter.class, kosul(kriter), sayfa, OZETLENEN_ILISKILER);
+    }
+
+    @Override
+    public List<Envanter> bul(EnvanterAramaKriteri kriter, int enFazla) {
+        return kosulluSorgu.liste(Envanter.class, kosul(kriter), Sort.by("id"), enFazla, OZETLENEN_ILISKILER);
+    }
+
+    private KosulluSorguRepository.Kosul<Envanter> kosul(EnvanterAramaKriteri k) {
+        Set<Long> kategoriIdleri = kategoriIdleri(k);
+        return (cb, kok, sorgu) -> {
+            List<Predicate> kosullar = new ArrayList<>();
+            kosullar.add(cb.equal(kok.get("tur"), k.tur()));
+            if (kategoriIdleri != null) {
+                kosullar.add(kok.get("kategori").get("id").in(kategoriIdleri));
+            }
+            esitse(kosullar, cb, kok.get("marka").get("id"), k.markaId());
+            esitse(kosullar, cb, kok.get("model").get("id"), k.modelId());
+            esitse(kosullar, cb, kok.get("depo").get("id"), k.depoId());
+            esitse(kosullar, cb, kok.get("ihale").get("id"), k.ihaleId());
+            esitse(kosullar, cb, kok.get("durum"), k.durum());
+            esitse(kosullar, cb, kok.get("zimmetliSicil").get("deger"),
+                k.zimmetliSicil() == null ? null : k.zimmetliSicil().deger());
+            if (k.zimmetli() != null) {
+                Path<String> sicil = kok.get("zimmetliSicil").get("deger");
+                kosullar.add(k.zimmetli() ? cb.isNotNull(sicil) : cb.isNull(sicil));
+            }
+            esitse(kosullar, cb, kok.get("seriNo"), k.seriNo());
+            esitse(kosullar, cb, kok.get("demirbasNo"), k.demirbasNo());
+            if (k.barkod() != null) {
+                kosullar.add(cb.exists(barkodlari(cb, kok, sorgu, b -> cb.equal(b.get("barkod"), k.barkod()))));
+            }
+            if (k.q() != null) {
+                kosullar.add(metinAramasi(cb, kok, sorgu, k.q()));
+            }
+            return kosullar;
+        };
+    }
+
+    /** Ad, seri no, açıklama ve barkodda "içerir"; metin sayıysa demirbaş no da. */
+    private static Predicate metinAramasi(CriteriaBuilder cb, Root<Envanter> kok, CriteriaQuery<?> sorgu, String q) {
+        List<Predicate> veya = new ArrayList<>(List.of(
+            KosulluSorguRepository.icerir(cb, kok.get("ad"), q),
+            KosulluSorguRepository.icerir(cb, kok.get("seriNo"), q),
+            KosulluSorguRepository.icerir(cb, kok.get("aciklama"), q),
+            cb.exists(barkodlari(cb, kok, sorgu, b -> KosulluSorguRepository.icerir(cb, b.get("barkod"), q)))));
+        sayi(q).ifPresent(no -> veya.add(cb.equal(kok.get("demirbasNo"), no)));
+        return cb.or(veya.toArray(Predicate[]::new));
+    }
+
+    /** Envanterin silinmemiş barkodlarından koşula uyanlar (EXISTS için). */
+    private static Subquery<Long> barkodlari(CriteriaBuilder cb, Root<Envanter> kok, CriteriaQuery<?> sorgu,
+                                             Function<Root<Barkod>, Predicate> kosul) {
+        Subquery<Long> alt = sorgu.subquery(Long.class);
+        Root<Barkod> barkod = alt.from(Barkod.class);
+        alt.select(barkod.get("id"))
+            .where(cb.equal(barkod.get("envanter"), kok), cb.isNull(barkod.get("silinmeZamani")), kosul.apply(barkod));
+        return alt;
+    }
+
+    /** Kategori ve (istenirse) tüm alt kategorileri; ağaçta döngü olsa da her kategori bir kez gezilir. */
+    private Set<Long> kategoriIdleri(EnvanterAramaKriteri k) {
+        if (k.kategoriId() == null) {
+            return null;
+        }
+        Set<Long> hepsi = new LinkedHashSet<>(List.of(k.kategoriId()));
+        List<Long> sinir = List.of(k.kategoriId());
+        while (k.altKategoriler() && !sinir.isEmpty()) {
+            sinir = kategoriRepository.altKategoriIdleri(sinir).stream().filter(hepsi::add).toList();
+        }
+        return hepsi;
+    }
+
+    private static void esitse(List<Predicate> kosullar, CriteriaBuilder cb, Path<?> alan, Object deger) {
+        if (deger != null) {
+            kosullar.add(cb.equal(alan, deger));
+        }
+    }
+
+    private static Optional<Long> sayi(String metin) {
+        try {
+            return Optional.of(Long.valueOf(metin));
+        } catch (NumberFormatException sayiDegil) {
+            return Optional.empty();
+        }
     }
 
     @Override
