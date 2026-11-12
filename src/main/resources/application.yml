@@ -31,9 +31,10 @@ spring:
   flyway:
     # Domain şeması depo-domain jar'ındaki script'lerden gelir (V1–V999).
     locations: classpath:db/migration/domain
-    # Göç uygulaması aynı şemaya V1000+ script'lerini de uygular; bu projede o script'ler yok.
-    # "*:missing" bunların yerelde bulunmamasını hata saymaz; out-of-order iki akışın sürüm sırası içindir.
-    ignore-migration-patterns: "*:missing"
+    # Göç uygulaması aynı şemaya V1000+ script'lerini de uygular; bu projede o script'ler yok. Domain'in son
+    # sürümünden büyük oldukları için Flyway onları "future" sayar. Bu ayar Flyway'in varsayılanı "*:future"ı
+    # ezdiği için ikisi de yazılır. out-of-order iki akışın sürüm sırası içindir (bkz. UygulamaEntegrasyonTesti).
+    ignore-migration-patterns: "*:missing,*:future"
     out-of-order: true
 
   data:
