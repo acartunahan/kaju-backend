@@ -102,7 +102,7 @@ aggregate'in alt kayıtları aynı transaction'da soft delete edilir.
 | Model | `/modeller` | CRUD (tur) | 409: envanter |
 | Firma | `/firmalar` | CRUD (tur) | 409: ihale |
 | İhale | `/ihaleler` | CRUD (yalnızca demirbaş firması) | 409: envanter |
-| Demirbaş | `/demirbaslar` | CRUD (demirbaş no ve seri no aktif demirbaşlarda tekil: 409; model yalnızca kendi markasıyla, marka boşsa modelden) | barkod, not, aparat, fotoğraf birlikte silinir |
+| Demirbaş | `/demirbaslar` | CRUD; `GET /demirbaslar?zimmetliSicil=…` o sicile şu an zimmetli olanlar (demirbaş no ve seri no aktif demirbaşlarda tekil: 409; model yalnızca kendi markasıyla, marka boşsa modelden) | barkod, not, aparat, fotoğraf birlikte silinir |
 | Sarf malzemesi | `/sarf-malzemeleri` | CRUD | barkod, not, aparat, fotoğraf birlikte silinir |
 | Barkod / not / aparat | `/envanterler/{envanterId}/barkodlar` · `/notlar` · `/aparatlar` | CRUD | — |
 | Arıza | `/arizalar` | CRUD | işlemler birlikte silinir |
@@ -111,6 +111,7 @@ aggregate'in alt kayıtları aynı transaction'da soft delete edilir.
 | Sayım satırı | `/sayimlar/{sayimId}/satirlar` | CRUD (tur: YEREL/GENEL, sayımın kapsamıyla aynı) | — |
 | Envanter hareketi | `/envanter-hareketleri` | Yalnızca GET, POST (geçmiş kaydı) | Yok (405) |
 | Zimmet kaydı | `/zimmet-kayitlari` | Yalnızca GET, POST (geçmiş kaydı) | Yok (405) |
+| Zimmet geçmişi | `/demirbaslar/{demirbasId}/zimmet-gecmisi` | Yalnızca GET (en yeni önce). Zimmetli sicil değişince demirbaş servisi otomatik yazar; migration başlangıç kaydını yazar | Yok (405) |
 
 Bilerek açılmayanlar: `COKLU_ZIMMET` ve `SQL_KAYDI` (anlamları doğrulanmadı), envanter fotoğrafı (dosya deposu
 bağlantısı sonra).

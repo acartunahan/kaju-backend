@@ -50,6 +50,11 @@ public final class ApiIstemcisi {
         return JsonPath.read(govde(sonuc), "$.icerik[*].id");
     }
 
+    /** Liste ucunu sorgu parametresiyle çağırır (ör. {@code zimmetliSicil}). */
+    public MvcTestResult listele(String parametre, String deger) {
+        return mvc.get().uri(yol).param(parametre, deger).param("size", "100").exchange();
+    }
+
     public static String govde(MvcTestResult sonuc) {
         try {
             return sonuc.getResponse().getContentAsString();

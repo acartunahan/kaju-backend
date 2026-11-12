@@ -26,12 +26,13 @@ class UygulamaEntegrasyonTesti extends OracleEntegrasyonTestTabani {
     @Test
     void shouldApplyDomainFlywaySchemaWithSoftDeleteTriggers() throws Exception {
         try (Connection baglanti = OracleTestOrtami.baglanti(); Statement ifade = baglanti.createStatement()) {
-            assertThat(tekSayi(ifade, "SELECT COUNT(*) FROM \"flyway_schema_history\" WHERE \"version\" = '1' AND \"success\" = 1"))
-                .isEqualTo(1);
-            assertThat(tekSayi(ifade, "SELECT COUNT(*) FROM USER_TABLES WHERE TABLE_NAME IN ('ENVANTER', 'MARKA', 'SAYIM_SATIRI')"))
-                .isEqualTo(3);
+            assertThat(tekSayi(ifade, "SELECT COUNT(*) FROM \"flyway_schema_history\" WHERE \"version\" IN ('1', '2') "
+                + "AND \"success\" = 1")).isEqualTo(2);
+            assertThat(tekSayi(ifade, "SELECT COUNT(*) FROM USER_TABLES WHERE TABLE_NAME IN ('ENVANTER', 'MARKA', 'SAYIM_SATIRI', "
+                + "'ZIMMET_GECMISI')")).isEqualTo(4);
+            // 20 domain tablosu: V1 (19) + V2 (ZIMMET_GECMISI); her birinde silme yasağı trigger'ı
             assertThat(tekSayi(ifade, "SELECT COUNT(*) FROM USER_TRIGGERS WHERE TRIGGER_NAME LIKE 'TRG\\_%\\_SILME\\_YASAK' ESCAPE '\\' "
-                + "AND STATUS = 'ENABLED'")).isEqualTo(19);
+                + "AND STATUS = 'ENABLED'")).isEqualTo(20);
             assertThat(isimler(ifade, "SELECT TABLE_NAME FROM USER_TABLES WHERE TABLE_NAME LIKE 'MIG\\_%' ESCAPE '\\' "
                 + "OR TABLE_NAME LIKE 'BATCH\\_%' ESCAPE '\\'")).as("göç tabloları bu projede kurulmaz").isEmpty();
         }

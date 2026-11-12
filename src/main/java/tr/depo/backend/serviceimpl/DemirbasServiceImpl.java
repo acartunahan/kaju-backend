@@ -8,6 +8,8 @@ import tr.depo.backend.dto.CreateDemirbasRequest;
 import tr.depo.backend.dto.DemirbasResponse;
 import tr.depo.backend.dto.SayfaResponse;
 import tr.depo.backend.dto.UpdateDemirbasRequest;
+import tr.depo.backend.exception.GecersizIstekException;
+import tr.depo.backend.exception.HataKodu;
 import tr.depo.backend.exception.KayitBulunamadiException;
 import tr.depo.backend.exception.TekillikIhlaliException;
 import tr.depo.backend.mapper.DemirbasMapper;
@@ -15,8 +17,10 @@ import tr.depo.backend.repository.EnvanterRepository;
 import tr.depo.backend.service.DemirbasService;
 import tr.depo.backend.service.EnvanterService;
 import tr.depo.backend.service.SilmeService;
+import tr.depo.backend.service.ZimmetGecmisiService;
 import tr.depo.backend.util.SiralamaDogrulayici;
 import tr.depo.domain.envanter.Envanter;
+import tr.depo.domain.ortak.Sicil;
 import tr.depo.domain.tanim.MalzemeTuru;
 
 @Service
@@ -31,13 +35,15 @@ public class DemirbasServiceImpl extends AbstractSoftDeleteServiceImpl<Envanter>
     private final EnvanterRepository repository;
     private final DemirbasMapper mapper;
     private final EnvanterService envanterService;
+    private final ZimmetGecmisiService zimmetGecmisiService;
 
     public DemirbasServiceImpl(EnvanterRepository repository, DemirbasMapper mapper, EnvanterService envanterService,
-                                SilmeService silmeService) {
+                               ZimmetGecmisiService zimmetGecmisiService, SilmeService silmeService) {
         super(repository, silmeService, KAYNAK);
         this.repository = repository;
         this.mapper = mapper;
         this.envanterService = envanterService;
+        this.zimmetGecmisiService = zimmetGecmisiService;
     }
 
     @Override
@@ -52,6 +58,17 @@ public class DemirbasServiceImpl extends AbstractSoftDeleteServiceImpl<Envanter>
     }
 
     @Override
+    public SayfaResponse<DemirbasResponse> zimmetliListele(String zimmetliSicil, Pageable sayfa) {
+        Sicil sicil = Sicil.varsa(zimmetliSicil);
+        if (sicil == null) {
+            throw new GecersizIstekException(HataKodu.GECERSIZ_ISTEK, "zimmetliSicil boş");
+        }
+        SiralamaDogrulayici.dogrula(sayfa, SIRALAMA_ALANLARI);
+        return SayfaResponse.of(repository.findByTurAndZimmetliSicil_Deger(MalzemeTuru.DEMIRBAS, sicil.deger(), sayfa)
+            .map(mapper::cevap));
+    }
+
+    @Override
     @Transactional
     public DemirbasResponse olustur(CreateDemirbasRequest istek) {
         envanterService.garantiSirasiniDogrula(istek.garantiBaslangic(), istek.garantiBitis());
@@ -59,6 +76,7 @@ public class DemirbasServiceImpl extends AbstractSoftDeleteServiceImpl<Envanter>
         Envanter demirbas = mapper.yeni(istek);
         envanterService.bagla(demirbas, istek.kategoriId(), istek.markaId(), istek.modelId(), istek.depoId(), istek.ihaleId());
         Envanter kaydedilen = repository.save(demirbas);
+        zimmetGecmisiService.degisiklikVarsaKaydet(kaydedilen, null);
         repository.flush();
         return mapper.cevap(kaydedilen);
     }
@@ -70,8 +88,10 @@ public class DemirbasServiceImpl extends AbstractSoftDeleteServiceImpl<Envanter>
         surumuDogrula(demirbas, istek.versiyon());
         envanterService.garantiSirasiniDogrula(istek.garantiBaslangic(), istek.garantiBitis());
         tekilOlmali(demirbas, istek.demirbasNo(), istek.seriNo());
+        Sicil oncekiZimmetliSicil = demirbas.getZimmetliSicil();
         mapper.guncelle(istek, demirbas);
         envanterService.bagla(demirbas, istek.kategoriId(), istek.markaId(), istek.modelId(), istek.depoId(), istek.ihaleId());
+        zimmetGecmisiService.degisiklikVarsaKaydet(demirbas, oncekiZimmetliSicil);
         repository.flush();
         return mapper.cevap(demirbas);
     }
